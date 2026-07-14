@@ -13,90 +13,91 @@ public sealed class EndpointTelemetryCollector(
         Guid deviceId,
         CancellationToken cancellationToken)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return new SubmitEndpointTelemetryRequest(
-                deviceId,
-                0,
-                0,
-                Array.Empty<SubmitFindingRequest>());
-        }
-
         var result = await RunPowerShellAsync(
             cancellationToken);
+
+        var connections = (result.Connections ?? [])
+            .Select(x => new SubmitNetworkConnectionRequest(
+                "TCP",
+                Limit(x.LocalAddress, 64) ?? "Unknown",
+                x.LocalPort,
+                Limit(x.RemoteAddress, 64) ?? "Unknown",
+                x.RemotePort,
+                Limit(x.State, 30) ?? "Unknown",
+                x.ProcessId,
+                Limit(x.ProcessName, 255)))
+            .ToList();
 
         var findings = (result.Findings ?? [])
             .Select(ToFindingRequest)
             .ToList();
 
         logger.LogInformation(
-            "Telemetry collected: {ProcessCount} processes, " +
-            "{ConnectionCount} connections, {FindingCount} findings.",
+            "Telemetry collected: {Processes} processes, " +
+            "{Connections} connections, {Findings} findings.",
             result.ProcessCount,
-            result.ActiveTcpConnectionCount,
+            connections.Count,
             findings.Count);
 
         return new SubmitEndpointTelemetryRequest(
             deviceId,
             result.ProcessCount,
             result.ActiveTcpConnectionCount,
+            connections,
             findings);
     }
 
     private static SubmitFindingRequest ToFindingRequest(
         PowerShellFinding finding)
     {
-        var category = Enum.TryParse<FindingCategory>(
+        Enum.TryParse<FindingCategory>(
             finding.Category,
             true,
-            out var parsedCategory)
-            ? parsedCategory
-            : FindingCategory.SuspiciousProcess;
+            out var category);
 
-        var severity = Enum.TryParse<FindingSeverity>(
+        Enum.TryParse<FindingSeverity>(
             finding.Severity,
             true,
-            out var parsedSeverity)
-            ? parsedSeverity
-            : FindingSeverity.Low;
+            out var severity);
 
         return new SubmitFindingRequest(
             category,
             severity,
-            Limit(finding.Title, 200) ?? "Suspicious activity",
+            Limit(finding.Title, 200) ??
+                "Suspicious activity",
             Limit(finding.Description, 2000) ??
-                "A suspicious activity indicator was detected.",
+                "Suspicious activity detected.",
             Limit(finding.ProcessName, 255),
             finding.ProcessId,
             Limit(finding.FilePath, 1024),
             Limit(finding.CommandLine, 4000));
     }
 
-    private static string? Limit(string? value, int maxLength)
+    private static string? Limit(string? value, int length)
     {
         if (string.IsNullOrWhiteSpace(value))
             return null;
 
-        var cleanValue = value.Trim();
+        var clean = value.Trim();
 
-        return cleanValue.Length <= maxLength
-            ? cleanValue
-            : cleanValue[..maxLength];
+        return clean.Length <= length
+            ? clean
+            : clean[..length];
     }
 
     private static async Task<PowerShellTelemetryResult>
         RunPowerShellAsync(
             CancellationToken cancellationToken)
     {
-        var encodedCommand = Convert.ToBase64String(
+        var encoded = Convert.ToBase64String(
             Encoding.Unicode.GetBytes(PowerShellScript));
 
         var startInfo = new ProcessStartInfo
         {
             FileName = "powershell.exe",
             Arguments =
-                $"-NoLogo -NoProfile -NonInteractive " +
-                $"-EncodedCommand {encodedCommand}",
+                "-NoLogo -NoProfile -NonInteractive " +
+                $"-EncodedCommand {encoded}",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -108,11 +109,7 @@ public sealed class EndpointTelemetryCollector(
             StartInfo = startInfo
         };
 
-        if (!process.Start())
-        {
-            throw new InvalidOperationException(
-                "PowerShell could not be started.");
-        }
+        process.Start();
 
         var outputTask =
             process.StandardOutput.ReadToEndAsync(
@@ -128,10 +125,7 @@ public sealed class EndpointTelemetryCollector(
         var error = await errorTask;
 
         if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException(
-                $"Telemetry collection failed: {error}");
-        }
+            throw new InvalidOperationException(error);
 
         return JsonSerializer.Deserialize<
                    PowerShellTelemetryResult>(
@@ -141,13 +135,23 @@ public sealed class EndpointTelemetryCollector(
                        PropertyNameCaseInsensitive = true
                    })
                ?? throw new InvalidOperationException(
-                   "PowerShell returned no telemetry.");
+                   "No telemetry was returned.");
     }
 
     private sealed record PowerShellTelemetryResult(
         int ProcessCount,
         int ActiveTcpConnectionCount,
+        List<PowerShellConnection>? Connections,
         List<PowerShellFinding>? Findings);
+
+    private sealed record PowerShellConnection(
+        string? LocalAddress,
+        int LocalPort,
+        string? RemoteAddress,
+        int RemotePort,
+        string? State,
+        int ProcessId,
+        string? ProcessName);
 
     private sealed record PowerShellFinding(
         string Category,
@@ -161,14 +165,53 @@ public sealed class EndpointTelemetryCollector(
 
     private const string PowerShellScript = """
         $processes = @(
-            Get-CimInstance Win32_Process -ErrorAction SilentlyContinue
+            Get-CimInstance Win32_Process `
+                -ErrorAction SilentlyContinue
         )
 
         $connections = @(
             Get-NetTCPConnection `
                 -State Established `
-                -ErrorAction SilentlyContinue
+                -ErrorAction SilentlyContinue |
+            Select-Object -First 200
         )
+
+        $processMap = @{}
+
+        foreach ($process in $processes) {
+            $processMap[[int]$process.ProcessId] =
+                [string]$process.Name
+        }
+
+        $connectionItems = @()
+
+        foreach ($connection in $connections) {
+            $ownerId = [int]$connection.OwningProcess
+            $ownerName = $processMap[$ownerId]
+
+            $connectionItems += [pscustomobject]@{
+                LocalAddress =
+                    [string]$connection.LocalAddress
+
+                LocalPort =
+                    [int]$connection.LocalPort
+
+                RemoteAddress =
+                    [string]$connection.RemoteAddress
+
+                RemotePort =
+                    [int]$connection.RemotePort
+
+                State =
+                    [string]$connection.State
+
+                ProcessId =
+                    $ownerId
+
+                ProcessName =
+                    $ownerName
+            }
+        }
 
         $findings = @()
 
@@ -182,8 +225,7 @@ public sealed class EndpointTelemetryCollector(
             $commandLine = [string]$process.CommandLine
             $nameLower = $name.ToLowerInvariant()
 
-            $suspiciousCommand = $false
-            $commandDescription = $null
+            $description = $null
 
             if (
                 ($nameLower -eq 'powershell.exe' -or
@@ -191,53 +233,64 @@ public sealed class EndpointTelemetryCollector(
                 $commandLine -match
                 '(?i)(-enc(odedcommand)?\b|frombase64string|invoke-expression|\biex\b|downloadstring)'
             ) {
-                $suspiciousCommand = $true
-                $commandDescription =
+                $description =
                     'PowerShell is using an encoded or execution-related command.'
             }
             elseif (
                 $nameLower -eq 'mshta.exe' -and
                 $commandLine -match '(?i)https?://'
             ) {
-                $suspiciousCommand = $true
-                $commandDescription =
+                $description =
                     'MSHTA is referencing a remote URL.'
             }
             elseif (
                 $nameLower -eq 'certutil.exe' -and
-                $commandLine -match '(?i)(-urlcache|-decode)'
+                $commandLine -match
+                '(?i)(-urlcache|-decode)'
             ) {
-                $suspiciousCommand = $true
-                $commandDescription =
-                    'CertUtil is being used to download or decode content.'
+                $description =
+                    'CertUtil is downloading or decoding content.'
             }
             elseif (
                 $nameLower -eq 'rundll32.exe' -and
                 $commandLine -match '(?i)javascript:'
             ) {
-                $suspiciousCommand = $true
-                $commandDescription =
-                    'Rundll32 is executing JavaScript content.'
+                $description =
+                    'Rundll32 is executing JavaScript.'
             }
             elseif (
                 $nameLower -eq 'regsvr32.exe' -and
                 $commandLine -match '(?i)/i:https?://'
             ) {
-                $suspiciousCommand = $true
-                $commandDescription =
+                $description =
                     'Regsvr32 is referencing a remote URL.'
             }
 
-            if ($suspiciousCommand) {
+            if ($null -ne $description) {
                 $findings += [pscustomobject]@{
-                    Category = 'SuspiciousCommandLine'
-                    Severity = 'High'
-                    Title = 'Suspicious command line detected'
-                    Description = $commandDescription
-                    ProcessName = $name
-                    ProcessId = [int]$process.ProcessId
-                    FilePath = $path
-                    CommandLine = $commandLine
+                    Category =
+                        'SuspiciousCommandLine'
+
+                    Severity =
+                        'High'
+
+                    Title =
+                        'Suspicious command line detected'
+
+                    Description =
+                        $description
+
+                    ProcessName =
+                        $name
+
+                    ProcessId =
+                        [int]$process.ProcessId
+
+                    FilePath =
+                        $path
+
+                    CommandLine =
+                        $commandLine
                 }
             }
 
@@ -247,24 +300,46 @@ public sealed class EndpointTelemetryCollector(
                 '(?i)(\\AppData\\Local\\Temp\\|\\Windows\\Temp\\|\\Users\\Public\\)'
             ) {
                 $findings += [pscustomobject]@{
-                    Category = 'SuspiciousFileLocation'
-                    Severity = 'Medium'
-                    Title = 'Process running from a risky location'
+                    Category =
+                        'SuspiciousFileLocation'
+
+                    Severity =
+                        'Medium'
+
+                    Title =
+                        'Process running from a risky location'
+
                     Description =
-                        'A running process was found inside a temporary or public directory.'
-                    ProcessName = $name
-                    ProcessId = [int]$process.ProcessId
-                    FilePath = $path
-                    CommandLine = $commandLine
+                        'A process is running from a temporary or public directory.'
+
+                    ProcessName =
+                        $name
+
+                    ProcessId =
+                        [int]$process.ProcessId
+
+                    FilePath =
+                        $path
+
+                    CommandLine =
+                        $commandLine
                 }
             }
         }
 
         [pscustomobject]@{
-            ProcessCount = @($processes).Count
-            ActiveTcpConnectionCount = @($connections).Count
-            Findings = @($findings)
+            ProcessCount =
+                @($processes).Count
+
+            ActiveTcpConnectionCount =
+                @($connections).Count
+
+            Connections =
+                @($connectionItems)
+
+            Findings =
+                @($findings)
         } |
-        ConvertTo-Json -Depth 6 -Compress
+        ConvertTo-Json -Depth 7 -Compress
         """;
 }

@@ -25,6 +25,10 @@ public sealed class EndpointTelemetryService(
             request.Findings ??
             Array.Empty<SubmitFindingRequest>();
 
+        var incomingConnections =
+            request.Connections ??
+            Array.Empty<SubmitNetworkConnectionRequest>();
+
         var telemetryRisk =
             CalculateRiskScore(incomingFindings);
 
@@ -52,10 +56,32 @@ public sealed class EndpointTelemetryService(
                 x.CommandLine))
             .ToList();
 
+        var connections = incomingConnections
+            .Take(500)
+            .Select(x => new NetworkConnectionSnapshot(
+                scan.Id,
+                request.DeviceId,
+                x.Protocol,
+                x.LocalAddress,
+                x.LocalPort,
+                x.RemoteAddress,
+                x.RemotePort,
+                x.State,
+                x.ProcessId,
+                x.ProcessName))
+            .ToList();
+
         if (findings.Count > 0)
         {
             await dbContext.SecurityFindings.AddRangeAsync(
                 findings,
+                cancellationToken);
+        }
+
+        if (connections.Count > 0)
+        {
+            await dbContext.NetworkConnectionSnapshots.AddRangeAsync(
+                connections,
                 cancellationToken);
         }
 
@@ -70,7 +96,10 @@ public sealed class EndpointTelemetryService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return ToResponse(scan, findings);
+        return ToResponse(
+            scan,
+            connections,
+            findings);
     }
 
     public async Task<EndpointTelemetryResponse?> GetLatestAsync(
@@ -86,13 +115,22 @@ public sealed class EndpointTelemetryService(
         if (scan is null)
             return null;
 
+        var connections = await dbContext.NetworkConnectionSnapshots
+            .AsNoTracking()
+            .Where(x => x.ScanId == scan.Id)
+            .OrderBy(x => x.ProcessName)
+            .ToListAsync(cancellationToken);
+
         var findings = await dbContext.SecurityFindings
             .AsNoTracking()
             .Where(x => x.ScanId == scan.Id)
             .OrderByDescending(x => x.Severity)
             .ToListAsync(cancellationToken);
 
-        return ToResponse(scan, findings);
+        return ToResponse(
+            scan,
+            connections,
+            findings);
     }
 
     private static int CalculateRiskScore(
@@ -121,13 +159,28 @@ public sealed class EndpointTelemetryService(
 
     private static EndpointTelemetryResponse ToResponse(
         EndpointTelemetryScan scan,
+        IReadOnlyList<NetworkConnectionSnapshot> connections,
         IReadOnlyList<SecurityFinding> findings)
     {
-        var responses = findings
+        var connectionResponses = connections
+            .Select(x => new NetworkConnectionResponse(
+                x.Id,
+                x.Protocol,
+                x.LocalAddress,
+                x.LocalPort,
+                x.RemoteAddress,
+                x.RemotePort,
+                x.State,
+                x.ProcessId,
+                x.ProcessName,
+                x.CollectedAtUtc))
+            .ToList();
+
+        var findingResponses = findings
             .Select(x => new FindingResponse(
                 x.Id,
-                x.Category,
-                x.Severity,
+                x.Category.ToString(),
+                x.Severity.ToString(),
                 x.Title,
                 x.Description,
                 x.ProcessName,
@@ -144,6 +197,7 @@ public sealed class EndpointTelemetryService(
             scan.ActiveTcpConnectionCount,
             scan.RiskScore,
             scan.CollectedAtUtc,
-            responses);
+            connectionResponses,
+            findingResponses);
     }
 }

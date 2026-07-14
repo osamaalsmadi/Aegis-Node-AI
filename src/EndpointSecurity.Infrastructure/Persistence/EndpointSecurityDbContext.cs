@@ -19,6 +19,9 @@ public sealed class EndpointSecurityDbContext(
     public DbSet<SecurityFinding> SecurityFindings =>
         Set<SecurityFinding>();
 
+    public DbSet<NetworkConnectionSnapshot> NetworkConnectionSnapshots =>
+        Set<NetworkConnectionSnapshot>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -51,9 +54,6 @@ public sealed class EndpointSecurityDbContext(
         device.Property(x => x.Status)
             .HasConversion<string>()
             .HasMaxLength(20)
-            .IsRequired();
-
-        device.Property(x => x.RiskScore)
             .IsRequired();
 
         device.HasIndex(x => x.HostName);
@@ -133,6 +133,39 @@ public sealed class EndpointSecurityDbContext(
 
         finding.HasIndex(x => x.DeviceId);
         finding.HasIndex(x => x.Severity);
-        finding.HasIndex(x => x.DetectedAtUtc);
+
+        var connection =
+            modelBuilder.Entity<NetworkConnectionSnapshot>();
+
+        connection.ToTable("NetworkConnectionSnapshots");
+        connection.HasKey(x => x.Id);
+
+        connection.Property(x => x.Protocol)
+            .HasMaxLength(10)
+            .IsRequired();
+
+        connection.Property(x => x.LocalAddress)
+            .HasMaxLength(64)
+            .IsRequired();
+
+        connection.Property(x => x.RemoteAddress)
+            .HasMaxLength(64)
+            .IsRequired();
+
+        connection.Property(x => x.State)
+            .HasMaxLength(30)
+            .IsRequired();
+
+        connection.Property(x => x.ProcessName)
+            .HasMaxLength(255);
+
+        connection.HasOne<EndpointTelemetryScan>()
+            .WithMany()
+            .HasForeignKey(x => x.ScanId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        connection.HasIndex(x => x.DeviceId);
+        connection.HasIndex(x => x.RemoteAddress);
+        connection.HasIndex(x => x.RemotePort);
     }
 }
