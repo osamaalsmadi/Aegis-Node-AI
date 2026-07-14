@@ -11,6 +11,14 @@ public sealed class AgentCommand
     public AgentCommand(
         Guid deviceId,
         AgentCommandType type)
+        : this(deviceId, type, null)
+    {
+    }
+
+    public AgentCommand(
+        Guid deviceId,
+        AgentCommandType type,
+        string? targetPath)
     {
         if (deviceId == Guid.Empty)
         {
@@ -22,6 +30,7 @@ public sealed class AgentCommand
         Id = Guid.NewGuid();
         DeviceId = deviceId;
         Type = type;
+        TargetPath = Limit(targetPath, 1024);
         Status = AgentCommandStatus.Pending;
         RequestedAtUtc = DateTime.UtcNow;
     }
@@ -31,6 +40,8 @@ public sealed class AgentCommand
     public Guid DeviceId { get; private set; }
 
     public AgentCommandType Type { get; private set; }
+
+    public string? TargetPath { get; private set; }
 
     public AgentCommandStatus Status { get; private set; }
 
@@ -103,6 +114,7 @@ public sealed class AgentCommand
         Status = AgentCommandStatus.Failed;
         StartedAtUtc ??= DateTime.UtcNow;
         CompletedAtUtc = DateTime.UtcNow;
+
         ErrorMessage = Limit(
             string.IsNullOrWhiteSpace(errorMessage)
                 ? "The command failed without an error message."

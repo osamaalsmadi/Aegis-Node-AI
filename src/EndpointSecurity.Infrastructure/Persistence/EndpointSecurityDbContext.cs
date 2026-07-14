@@ -185,6 +185,9 @@ public sealed class EndpointSecurityDbContext(
             .HasMaxLength(30)
             .IsRequired();
 
+        agentCommand.Property(x => x.TargetPath)
+            .HasMaxLength(1024);
+
         agentCommand.Property(x => x.ResultMessage)
             .HasMaxLength(1000);
 
@@ -201,4 +204,5 @@ public sealed class EndpointSecurityDbContext(
         agentCommand.HasIndex(x => x.RequestedAtUtc);
     }
 }
+
 
