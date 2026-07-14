@@ -3,14 +3,16 @@ using EndpointSecurity.Agent.Services;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Services.AddWindowsService(options =>
+{
+    options.ServiceName = "Endpoint Security Agent";
+});
+
 var apiBaseUrl = builder.Configuration["Agent:ApiBaseUrl"]
     ?? throw new InvalidOperationException(
         "Agent API base URL was not configured.");
 
-if (!Uri.TryCreate(
-        apiBaseUrl,
-        UriKind.Absolute,
-        out var apiBaseUri))
+if (!Uri.TryCreate(apiBaseUrl, UriKind.Absolute, out var apiBaseUri))
 {
     throw new InvalidOperationException(
         "Agent API base URL is invalid.");
