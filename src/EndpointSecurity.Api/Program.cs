@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using EndpointSecurity.Application.Devices;
 using EndpointSecurity.Application.SecurityPosture;
+using EndpointSecurity.Application.Telemetry;
 using EndpointSecurity.Infrastructure.Persistence;
 using EndpointSecurity.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,9 @@ builder.Services.AddScoped<IDeviceService, DeviceService>();
 builder.Services.AddScoped<
     ISecurityPostureService,
     SecurityPostureService>();
+builder.Services.AddScoped<
+    IEndpointTelemetryService,
+    EndpointTelemetryService>();
 
 var app = builder.Build();
 

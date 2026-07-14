@@ -25,6 +25,7 @@ builder.Services.AddSingleton(
 
 builder.Services.AddSingleton<DeviceIdentityProvider>();
 builder.Services.AddSingleton<WindowsSecurityCollector>();
+builder.Services.AddSingleton<EndpointTelemetryCollector>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

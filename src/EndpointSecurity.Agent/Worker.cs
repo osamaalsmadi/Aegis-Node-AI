@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using EndpointSecurity.Agent.Services;
 using EndpointSecurity.Application.Devices;
 using EndpointSecurity.Application.SecurityPosture;
+using EndpointSecurity.Application.Telemetry;
 using Microsoft.Win32;
 
 namespace EndpointSecurity.Agent;
@@ -13,33 +14,38 @@ public sealed class Worker(
     HttpClient httpClient,
     DeviceIdentityProvider identityProvider,
     WindowsSecurityCollector securityCollector,
+    EndpointTelemetryCollector telemetryCollector,
     IConfiguration configuration) : BackgroundService
 {
     protected override async Task ExecuteAsync(
         CancellationToken stoppingToken)
     {
-        var heartbeatSeconds = Math.Max(
-            10,
-            configuration.GetValue(
-                "Agent:HeartbeatIntervalSeconds",
-                60));
+        var heartbeatInterval = TimeSpan.FromSeconds(
+            Math.Max(
+                10,
+                configuration.GetValue(
+                    "Agent:HeartbeatIntervalSeconds",
+                    60)));
 
-        var securityScanSeconds = Math.Max(
-            60,
-            configuration.GetValue(
-                "Agent:SecurityScanIntervalSeconds",
-                300));
+        var securityScanInterval = TimeSpan.FromSeconds(
+            Math.Max(
+                60,
+                configuration.GetValue(
+                    "Agent:SecurityScanIntervalSeconds",
+                    300)));
 
-        var heartbeatInterval =
-            TimeSpan.FromSeconds(heartbeatSeconds);
-
-        var securityScanInterval =
-            TimeSpan.FromSeconds(securityScanSeconds);
+        var telemetryScanInterval = TimeSpan.FromSeconds(
+            Math.Max(
+                60,
+                configuration.GetValue(
+                    "Agent:TelemetryScanIntervalSeconds",
+                    300)));
 
         var deviceId =
             identityProvider.GetOrCreateDeviceId();
 
         var nextSecurityScanUtc = DateTime.MinValue;
+        var nextTelemetryScanUtc = DateTime.MinValue;
 
         logger.LogInformation(
             "Endpoint Security Agent started with ID {DeviceId}.",
@@ -54,15 +60,26 @@ public sealed class Worker(
             if (registered &&
                 DateTime.UtcNow >= nextSecurityScanUtc)
             {
-                var submitted = await SubmitSecurityPostureAsync(
-                    deviceId,
-                    stoppingToken);
-
-                if (submitted)
+                if (await SubmitSecurityPostureAsync(
+                        deviceId,
+                        stoppingToken))
                 {
                     nextSecurityScanUtc =
                         DateTime.UtcNow.Add(
                             securityScanInterval);
+                }
+            }
+
+            if (registered &&
+                DateTime.UtcNow >= nextTelemetryScanUtc)
+            {
+                if (await SubmitTelemetryAsync(
+                        deviceId,
+                        stoppingToken))
+                {
+                    nextTelemetryScanUtc =
+                        DateTime.UtcNow.Add(
+                            telemetryScanInterval);
                 }
             }
 
@@ -106,11 +123,6 @@ public sealed class Worker(
 
             return true;
         }
-        catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
-        {
-            return false;
-        }
         catch (Exception exception)
         {
             logger.LogError(
@@ -138,9 +150,8 @@ public sealed class Worker(
 
             response.EnsureSuccessStatusCode();
 
-            var result =
-                await response.Content.ReadFromJsonAsync<
-                    SecurityPostureResponse>(
+            var result = await response.Content
+                .ReadFromJsonAsync<SecurityPostureResponse>(
                     cancellationToken);
 
             logger.LogInformation(
@@ -148,11 +159,6 @@ public sealed class Worker(
                 result?.RiskScore);
 
             return true;
-        }
-        catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
-        {
-            return false;
         }
         catch (Exception exception)
         {
@@ -164,12 +170,52 @@ public sealed class Worker(
         }
     }
 
+    private async Task<bool> SubmitTelemetryAsync(
+        Guid deviceId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = await telemetryCollector.CollectAsync(
+                deviceId,
+                cancellationToken);
+
+            using var response = await httpClient.PostAsJsonAsync(
+                "api/telemetry",
+                request,
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content
+                .ReadFromJsonAsync<EndpointTelemetryResponse>(
+                    cancellationToken);
+
+            logger.LogInformation(
+                "Telemetry submitted. Processes: {Processes}, " +
+                "connections: {Connections}, findings: {Findings}, " +
+                "risk score: {RiskScore}.",
+                result?.ProcessCount,
+                result?.ActiveTcpConnectionCount,
+                result?.Findings.Count,
+                result?.RiskScore);
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Telemetry submission failed.");
+
+            return false;
+        }
+    }
+
     private static string GetOperatingSystemName()
     {
         if (!OperatingSystem.IsWindows())
-        {
             return RuntimeInformation.OSDescription;
-        }
 
         const string registryKey =
             @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion";

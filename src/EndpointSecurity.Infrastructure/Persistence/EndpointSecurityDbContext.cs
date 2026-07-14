@@ -13,6 +13,12 @@ public sealed class EndpointSecurityDbContext(
     public DbSet<SecurityPostureSnapshot> SecurityPostureSnapshots =>
         Set<SecurityPostureSnapshot>();
 
+    public DbSet<EndpointTelemetryScan> EndpointTelemetryScans =>
+        Set<EndpointTelemetryScan>();
+
+    public DbSet<SecurityFinding> SecurityFindings =>
+        Set<SecurityFinding>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -53,27 +59,80 @@ public sealed class EndpointSecurityDbContext(
         device.HasIndex(x => x.HostName);
         device.HasIndex(x => x.LastSeenUtc);
 
-        var snapshot =
+        var posture =
             modelBuilder.Entity<SecurityPostureSnapshot>();
 
-        snapshot.ToTable("SecurityPostureSnapshots");
-        snapshot.HasKey(x => x.Id);
+        posture.ToTable("SecurityPostureSnapshots");
+        posture.HasKey(x => x.Id);
 
-        snapshot.Property(x => x.RiskScore)
-            .IsRequired();
-
-        snapshot.Property(x => x.CollectedAtUtc)
-            .IsRequired();
-
-        snapshot.HasOne<ManagedDevice>()
+        posture.HasOne<ManagedDevice>()
             .WithMany()
             .HasForeignKey(x => x.DeviceId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        snapshot.HasIndex(x => new
+        posture.HasIndex(x => new
         {
             x.DeviceId,
             x.CollectedAtUtc
         });
+
+        var scan =
+            modelBuilder.Entity<EndpointTelemetryScan>();
+
+        scan.ToTable("EndpointTelemetryScans");
+        scan.HasKey(x => x.Id);
+
+        scan.HasOne<ManagedDevice>()
+            .WithMany()
+            .HasForeignKey(x => x.DeviceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        scan.HasIndex(x => new
+        {
+            x.DeviceId,
+            x.CollectedAtUtc
+        });
+
+        var finding =
+            modelBuilder.Entity<SecurityFinding>();
+
+        finding.ToTable("SecurityFindings");
+        finding.HasKey(x => x.Id);
+
+        finding.Property(x => x.Category)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
+
+        finding.Property(x => x.Severity)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        finding.Property(x => x.Title)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        finding.Property(x => x.Description)
+            .HasMaxLength(2000)
+            .IsRequired();
+
+        finding.Property(x => x.ProcessName)
+            .HasMaxLength(255);
+
+        finding.Property(x => x.FilePath)
+            .HasMaxLength(1024);
+
+        finding.Property(x => x.CommandLine)
+            .HasMaxLength(4000);
+
+        finding.HasOne<EndpointTelemetryScan>()
+            .WithMany()
+            .HasForeignKey(x => x.ScanId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        finding.HasIndex(x => x.DeviceId);
+        finding.HasIndex(x => x.Severity);
+        finding.HasIndex(x => x.DetectedAtUtc);
     }
 }

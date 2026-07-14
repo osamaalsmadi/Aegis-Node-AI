@@ -13,13 +13,6 @@ public sealed class DeviceService(
         RegisterDeviceRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (request.DeviceId == Guid.Empty)
-        {
-            throw new ArgumentException(
-                "Device ID cannot be empty.",
-                nameof(request));
-        }
-
         var device = await dbContext.ManagedDevices
             .SingleOrDefaultAsync(
                 x => x.Id == request.DeviceId,
@@ -35,6 +28,11 @@ public sealed class DeviceService(
                 request.Architecture,
                 request.AgentVersion);
 
+            device.UpdateHeartbeat(
+                request.AgentVersion,
+                DeviceStatus.Healthy,
+                0);
+
             await dbContext.ManagedDevices.AddAsync(
                 device,
                 cancellationToken);
@@ -47,12 +45,12 @@ public sealed class DeviceService(
                 request.OperatingSystemVersion,
                 request.Architecture,
                 request.AgentVersion);
-        }
 
-        device.UpdateHeartbeat(
-            request.AgentVersion,
-            DeviceStatus.Healthy,
-            0);
+            device.UpdateHeartbeat(
+                request.AgentVersion,
+                device.Status,
+                device.RiskScore);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
