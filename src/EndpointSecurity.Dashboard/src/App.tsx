@@ -30,6 +30,8 @@ import {
   type DashboardPage
 } from './AdditionalPages'
 import { ScanCommandPanel } from './ScanCommandPanel'
+import { ScanCenter } from './ScanCenter'
+import { RemediationCenter } from './RemediationCenter'
 import './App.css'
 import './pages.css'
 
@@ -344,10 +346,20 @@ function App() {
       description:
         'Live security posture and endpoint telemetry'
     },
+    scans: {
+      title: 'Scan Center',
+      description:
+        'Run Defender scans and review endpoint scan history'
+    },
     endpoints: {
       title: 'Managed Endpoints',
       description:
         'Device inventory, health, versions, and connectivity'
+    },
+    remediation: {
+      title: 'Threat Remediation',
+      description:
+        'Defender updates, quarantine, removal, and verification'
     },
     findings: {
       title: 'Security Findings',
@@ -393,6 +405,14 @@ function App() {
           </button>
 
           <button
+            className={`nav-item ${activePage === 'scans' ? 'active' : ''}`}
+            onClick={() => setActivePage('scans')}
+          >
+            <Search size={19} />
+            Scan Center
+          </button>
+
+          <button
             className={`nav-item ${activePage === 'endpoints' ? 'active' : ''}`}
             onClick={() => setActivePage('endpoints')}
           >
@@ -406,6 +426,14 @@ function App() {
           >
             <AlertTriangle size={19} />
             Findings
+          </button>
+
+          <button
+            className={`nav-item ${activePage === 'remediation' ? 'active' : ''}`}
+            onClick={() => setActivePage('remediation')}
+          >
+            <ShieldCheck size={19} />
+            Remediation
           </button>
 
           <button
@@ -794,6 +822,16 @@ function App() {
           </span>
         </footer>
           </>
+        ) : activePage === 'scans' ? (
+          <ScanCenter
+            deviceId={device?.id}
+            online={online}
+          />
+        ) : activePage === 'remediation' ? (
+          <RemediationCenter
+            deviceId={device?.id}
+            online={online}
+          />
         ) : (
           <AdditionalPages
             activePage={activePage}
@@ -808,6 +846,8 @@ function App() {
 }
 
 export default App
+
+
 
 
 

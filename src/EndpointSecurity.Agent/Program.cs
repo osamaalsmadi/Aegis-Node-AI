@@ -29,9 +29,11 @@ builder.Services.AddSingleton<DeviceIdentityProvider>();
 builder.Services.AddSingleton<WindowsSecurityCollector>();
 builder.Services.AddSingleton<EndpointTelemetryCollector>();
 builder.Services.AddSingleton<DefenderMalwareScanner>();
+builder.Services.AddSingleton<DefenderMaintenanceService>();
 builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<AgentCommandWorker>();
 
 var host = builder.Build();
 host.Run();
+
 

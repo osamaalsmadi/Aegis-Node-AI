@@ -17,6 +17,8 @@ export type DashboardPage =
   | 'findings'
   | 'network'
   | 'activity'
+  | 'scans'
+  | 'remediation'
 
 type DeviceRecord = {
   id: string
@@ -656,3 +658,5 @@ export function AdditionalPages({
     </div>
   )
 }
+
+
