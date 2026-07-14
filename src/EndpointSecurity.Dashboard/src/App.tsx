@@ -117,12 +117,21 @@ function extractDevices(payload: unknown): Device[] {
   return []
 }
 
+function parseApiDate(value: string): Date {
+  const includesTimeZone =
+    /Z$|[+-]\d{2}:\d{2}$/.test(value)
+
+  return new Date(
+    includesTimeZone ? value : `${value}Z`
+  )
+}
+
 function formatDate(value?: string): string {
   if (!value) {
     return 'Not available'
   }
 
-  const date = new Date(value)
+  const date = parseApiDate(value)
 
   if (Number.isNaN(date.getTime())) {
     return value
@@ -143,7 +152,7 @@ function isRecentlyOnline(value?: string): boolean {
     return false
   }
 
-  const time = new Date(value).getTime()
+  const time = parseApiDate(value).getTime()
 
   if (Number.isNaN(time)) {
     return false
@@ -178,8 +187,8 @@ function App() {
       const deviceList = extractDevices(devicePayload)
         .sort(
           (first, second) =>
-            new Date(second.lastSeenUtc).getTime() -
-            new Date(first.lastSeenUtc).getTime()
+            parseApiDate(second.lastSeenUtc).getTime() -
+            parseApiDate(first.lastSeenUtc).getTime()
         )
 
       setHealth(healthResult)
@@ -330,8 +339,8 @@ function App() {
           </div>
 
           <div>
-            <strong>SentinelOne</strong>
-            <span>Endpoint Platform</span>
+            <strong>Endpoint Security</strong>
+            <span>Operations Platform</span>
           </div>
         </div>
 
@@ -731,3 +740,4 @@ function App() {
 }
 
 export default App
+
