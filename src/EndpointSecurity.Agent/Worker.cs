@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using EndpointSecurity.Agent.Services;
 using EndpointSecurity.Application.Devices;
+using EndpointSecurity.Application.SecurityEvents;
 using EndpointSecurity.Application.SecurityPosture;
 using EndpointSecurity.Application.Telemetry;
 using Microsoft.Win32;
@@ -15,50 +16,80 @@ public sealed class Worker(
     DeviceIdentityProvider identityProvider,
     WindowsSecurityCollector securityCollector,
     EndpointTelemetryCollector telemetryCollector,
+    WindowsEventCollector eventCollector,
     DefenderMalwareScanner malwareScanner,
-    IConfiguration configuration) : BackgroundService
+    IConfiguration configuration)
+    : BackgroundService
 {
     protected override async Task ExecuteAsync(
         CancellationToken stoppingToken)
     {
-        var heartbeatInterval = TimeSpan.FromSeconds(
-            Math.Max(
-                10,
-                configuration.GetValue(
-                    "Agent:HeartbeatIntervalSeconds",
-                    60)));
+        var heartbeatInterval =
+            TimeSpan.FromSeconds(
+                Math.Max(
+                    10,
+                    configuration.GetValue(
+                        "Agent:HeartbeatIntervalSeconds",
+                        60)));
 
-        var securityScanInterval = TimeSpan.FromSeconds(
-            Math.Max(
-                60,
-                configuration.GetValue(
-                    "Agent:SecurityScanIntervalSeconds",
-                    300)));
+        var securityScanInterval =
+            TimeSpan.FromSeconds(
+                Math.Max(
+                    60,
+                    configuration.GetValue(
+                        "Agent:SecurityScanIntervalSeconds",
+                        300)));
 
-        var telemetryScanInterval = TimeSpan.FromSeconds(
-            Math.Max(
-                60,
-                configuration.GetValue(
-                    "Agent:TelemetryScanIntervalSeconds",
-                    300)));
+        var telemetryScanInterval =
+            TimeSpan.FromSeconds(
+                Math.Max(
+                    60,
+                    configuration.GetValue(
+                        "Agent:TelemetryScanIntervalSeconds",
+                        300)));
 
-        var malwareScanInterval = TimeSpan.FromHours(
+        var securityEventInterval =
+            TimeSpan.FromSeconds(
+                Math.Max(
+                    60,
+                    configuration.GetValue(
+                        "Agent:SecurityEventIntervalSeconds",
+                        300)));
+
+        var eventLookbackMinutes =
             Math.Max(
-                1,
+                5,
                 configuration.GetValue(
-                    "Agent:MalwareScanIntervalHours",
-                    24)));
+                    "Agent:SecurityEventLookbackMinutes",
+                    1440));
+
+        var malwareScanInterval =
+            TimeSpan.FromHours(
+                Math.Max(
+                    1,
+                    configuration.GetValue(
+                        "Agent:MalwareScanIntervalHours",
+                        24)));
 
         var deviceId =
             identityProvider.GetOrCreateDeviceId();
 
-        var nextSecurityScanUtc = DateTime.MinValue;
-        var nextTelemetryScanUtc = DateTime.MinValue;
-        var nextMalwareScanUtc = DateTime.MinValue;
+        var nextSecurityScanUtc =
+            DateTime.MinValue;
+
+        var nextTelemetryScanUtc =
+            DateTime.MinValue;
+
+        var nextSecurityEventUtc =
+            DateTime.MinValue;
+
+        var nextMalwareScanUtc =
+            DateTime.MinValue;
 
         IReadOnlyList<SubmitFindingRequest>
             pendingMalwareFindings =
-                Array.Empty<SubmitFindingRequest>();
+                Array.Empty<
+                    SubmitFindingRequest>();
 
         logger.LogInformation(
             "Endpoint Security Agent started with ID {DeviceId}.",
@@ -66,9 +97,10 @@ public sealed class Worker(
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var registered = await RegisterDeviceAsync(
-                deviceId,
-                stoppingToken);
+            var registered =
+                await RegisterDeviceAsync(
+                    deviceId,
+                    stoppingToken);
 
             if (registered &&
                 DateTime.UtcNow >= nextSecurityScanUtc)
@@ -80,6 +112,20 @@ public sealed class Worker(
                     nextSecurityScanUtc =
                         DateTime.UtcNow.Add(
                             securityScanInterval);
+                }
+            }
+
+            if (registered &&
+                DateTime.UtcNow >= nextSecurityEventUtc)
+            {
+                if (await SubmitSecurityEventsAsync(
+                        deviceId,
+                        eventLookbackMinutes,
+                        stoppingToken))
+                {
+                    nextSecurityEventUtc =
+                        DateTime.UtcNow.Add(
+                            securityEventInterval);
                 }
             }
 
@@ -98,15 +144,17 @@ public sealed class Worker(
             if (registered &&
                 DateTime.UtcNow >= nextTelemetryScanUtc)
             {
-                var submitted = await SubmitTelemetryAsync(
-                    deviceId,
-                    pendingMalwareFindings,
-                    stoppingToken);
+                var submitted =
+                    await SubmitTelemetryAsync(
+                        deviceId,
+                        pendingMalwareFindings,
+                        stoppingToken);
 
                 if (submitted)
                 {
                     pendingMalwareFindings =
-                        Array.Empty<SubmitFindingRequest>();
+                        Array.Empty<
+                            SubmitFindingRequest>();
 
                     nextTelemetryScanUtc =
                         DateTime.UtcNow.Add(
@@ -121,7 +169,9 @@ public sealed class Worker(
                     stoppingToken);
             }
             catch (OperationCanceledException)
-                when (stoppingToken.IsCancellationRequested)
+                when (
+                    stoppingToken
+                        .IsCancellationRequested)
             {
                 break;
             }
@@ -134,18 +184,24 @@ public sealed class Worker(
     {
         try
         {
-            var request = new RegisterDeviceRequest(
-                deviceId,
-                Environment.MachineName,
-                GetOperatingSystemName(),
-                Environment.OSVersion.Version.ToString(),
-                RuntimeInformation.OSArchitecture.ToString(),
-                GetAgentVersion());
+            var request =
+                new RegisterDeviceRequest(
+                    deviceId,
+                    Environment.MachineName,
+                    GetOperatingSystemName(),
+                    Environment.OSVersion
+                        .Version
+                        .ToString(),
+                    RuntimeInformation
+                        .OSArchitecture
+                        .ToString(),
+                    GetAgentVersion());
 
-            using var response = await httpClient.PostAsJsonAsync(
-                "api/devices/register",
-                request,
-                cancellationToken);
+            using var response =
+                await httpClient.PostAsJsonAsync(
+                    "api/devices/register",
+                    request,
+                    cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
@@ -155,7 +211,9 @@ public sealed class Worker(
             return true;
         }
         catch (OperationCanceledException)
-            when (cancellationToken.IsCancellationRequested)
+            when (
+                cancellationToken
+                    .IsCancellationRequested)
         {
             return false;
         }
@@ -169,29 +227,35 @@ public sealed class Worker(
         }
     }
 
-    private async Task<bool> SubmitSecurityPostureAsync(
-        Guid deviceId,
-        CancellationToken cancellationToken)
+    private async Task<bool>
+        SubmitSecurityPostureAsync(
+            Guid deviceId,
+            CancellationToken cancellationToken)
     {
         try
         {
-            var request = await securityCollector.CollectAsync(
-                deviceId,
-                cancellationToken);
+            var request =
+                await securityCollector.CollectAsync(
+                    deviceId,
+                    cancellationToken);
 
-            using var response = await httpClient.PostAsJsonAsync(
-                "api/security-posture",
-                request,
-                cancellationToken);
+            using var response =
+                await httpClient.PostAsJsonAsync(
+                    "api/security-posture",
+                    request,
+                    cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content
-                .ReadFromJsonAsync<SecurityPostureResponse>(
-                    cancellationToken);
+            var result =
+                await response.Content
+                    .ReadFromJsonAsync<
+                        SecurityPostureResponse>(
+                        cancellationToken);
 
             logger.LogInformation(
-                "Security posture submitted. Risk score: {RiskScore}.",
+                "Security posture submitted. " +
+                "Risk score: {RiskScore}.",
                 result?.RiskScore);
 
             return true;
@@ -206,6 +270,62 @@ public sealed class Worker(
         }
     }
 
+    private async Task<bool>
+        SubmitSecurityEventsAsync(
+            Guid deviceId,
+            int lookbackMinutes,
+            CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request =
+                await eventCollector.CollectAsync(
+                    deviceId,
+                    lookbackMinutes,
+                    cancellationToken);
+
+            if (request.Events.Count == 0)
+            {
+                logger.LogInformation(
+                    "No matching Windows security " +
+                    "events were found.");
+
+                return true;
+            }
+
+            using var response =
+                await httpClient.PostAsJsonAsync(
+                    "api/security-events/batch",
+                    request,
+                    cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var storedEvents =
+                await response.Content
+                    .ReadFromJsonAsync<
+                        List<
+                            WindowsSecurityEventResponse>>(
+                        cancellationToken);
+
+            logger.LogInformation(
+                "Windows security events submitted. " +
+                "New SQL records: {EventCount}.",
+                storedEvents?.Count ?? 0);
+
+            return true;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Windows security event " +
+                "submission failed.");
+
+            return false;
+        }
+    }
+
     private async Task<
         IReadOnlyList<SubmitFindingRequest>>
         RunMalwareScanAsync(
@@ -213,8 +333,9 @@ public sealed class Worker(
     {
         try
         {
-            return await malwareScanner.RunQuickScanAsync(
-                cancellationToken);
+            return await malwareScanner
+                .RunQuickScanAsync(
+                    cancellationToken);
         }
         catch (Exception exception)
         {
@@ -222,45 +343,55 @@ public sealed class Worker(
                 exception,
                 "Microsoft Defender Quick Scan failed.");
 
-            return Array.Empty<SubmitFindingRequest>();
+            return Array.Empty<
+                SubmitFindingRequest>();
         }
     }
 
-    private async Task<bool> SubmitTelemetryAsync(
-        Guid deviceId,
-        IReadOnlyList<SubmitFindingRequest>
-            additionalFindings,
-        CancellationToken cancellationToken)
+    private async Task<bool>
+        SubmitTelemetryAsync(
+            Guid deviceId,
+            IReadOnlyList<SubmitFindingRequest>
+                additionalFindings,
+            CancellationToken cancellationToken)
     {
         try
         {
-            var request = await telemetryCollector.CollectAsync(
-                deviceId,
-                cancellationToken);
+            var request =
+                await telemetryCollector.CollectAsync(
+                    deviceId,
+                    cancellationToken);
 
-            var combinedFindings = request.Findings
-                .Concat(additionalFindings)
-                .ToList();
+            var combinedFindings =
+                request.Findings
+                    .Concat(additionalFindings)
+                    .ToList();
 
-            var combinedRequest = request with
-            {
-                Findings = combinedFindings
-            };
+            var combinedRequest =
+                request with
+                {
+                    Findings = combinedFindings
+                };
 
-            using var response = await httpClient.PostAsJsonAsync(
-                "api/telemetry",
-                combinedRequest,
-                cancellationToken);
+            using var response =
+                await httpClient.PostAsJsonAsync(
+                    "api/telemetry",
+                    combinedRequest,
+                    cancellationToken);
 
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content
-                .ReadFromJsonAsync<EndpointTelemetryResponse>(
-                    cancellationToken);
+            var result =
+                await response.Content
+                    .ReadFromJsonAsync<
+                        EndpointTelemetryResponse>(
+                        cancellationToken);
 
             logger.LogInformation(
-                "Telemetry submitted. Processes: {Processes}, " +
-                "connections: {Connections}, findings: {Findings}, " +
+                "Telemetry submitted. " +
+                "Processes: {Processes}, " +
+                "connections: {Connections}, " +
+                "findings: {Findings}, " +
                 "risk score: {RiskScore}.",
                 result?.ProcessCount,
                 result?.ActiveTcpConnectionCount,
@@ -282,24 +413,32 @@ public sealed class Worker(
     private static string GetOperatingSystemName()
     {
         if (!OperatingSystem.IsWindows())
+        {
             return RuntimeInformation.OSDescription;
+        }
 
         const string registryKey =
             @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion";
 
-        var productName = Registry.GetValue(
-                registryKey,
-                "ProductName",
-                "Microsoft Windows")
-            ?.ToString()
+        var productName =
+            Registry.GetValue(
+                    registryKey,
+                    "ProductName",
+                    "Microsoft Windows")
+                ?.ToString()
             ?? "Microsoft Windows";
 
-        if (Environment.OSVersion.Version.Build >= 22000)
+        if (
+            Environment.OSVersion
+                .Version
+                .Build >= 22000)
         {
-            productName = productName.Replace(
-                "Windows 10",
-                "Windows 11",
-                StringComparison.OrdinalIgnoreCase);
+            productName =
+                productName.Replace(
+                    "Windows 10",
+                    "Windows 11",
+                    StringComparison
+                        .OrdinalIgnoreCase);
         }
 
         return productName;
@@ -307,7 +446,8 @@ public sealed class Worker(
 
     private static string GetAgentVersion()
     {
-        return Assembly.GetExecutingAssembly()
+        return Assembly
+                   .GetExecutingAssembly()
                    .GetName()
                    .Version?
                    .ToString(3)

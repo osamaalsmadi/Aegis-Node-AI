@@ -33,6 +33,7 @@ import { ScanCommandPanel } from './ScanCommandPanel'
 import { ScanCenter } from './ScanCenter'
 import { RemediationCenter } from './RemediationCenter'
 import { EndpointManagement } from './EndpointManagement'
+import { SecurityEventCenter } from './SecurityEventCenter'
 import './App.css'
 import './pages.css'
 
@@ -88,6 +89,9 @@ type ApiHealth = {
   utcTime: string
 }
 
+type SecurityEventSummary = {
+  riskScore: number
+}
 async function getJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     headers: {
@@ -179,6 +183,8 @@ function App() {
     useState<Telemetry | null>(null)
   const [health, setHealth] =
     useState<ApiHealth | null>(null)
+  const [securityEventRisk, setSecurityEventRisk] =
+    useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [lastRefresh, setLastRefresh] =
@@ -215,18 +221,27 @@ function App() {
         return
       }
 
-      const [postureResult, telemetryResult] =
-        await Promise.all([
-          getJson<SecurityPosture>(
-            `/api/security-posture/${currentDevice.id}/latest`
-          ),
-          getJson<Telemetry>(
-            `/api/telemetry/${currentDevice.id}/latest`
-          )
-        ])
+      const [
+        postureResult,
+        telemetryResult,
+        eventSummaryResult
+      ] = await Promise.all([
+        getJson<SecurityPosture>(
+          `/api/security-posture/${currentDevice.id}/latest`
+        ),
+        getJson<Telemetry>(
+          `/api/telemetry/${currentDevice.id}/latest`
+        ),
+        getJson<SecurityEventSummary>(
+          `/api/security-events/devices/${currentDevice.id}/summary`
+        )
+      ])
 
       setPosture(postureResult)
       setTelemetry(telemetryResult)
+      setSecurityEventRisk(
+        eventSummaryResult.riskScore ?? 0
+      )
       setError('')
       setLastRefresh(new Date())
     } catch (requestError) {
@@ -256,11 +271,12 @@ function App() {
   const apiHealthy =
     health?.status?.toLowerCase() === 'healthy'
 
-  const riskScore =
-    telemetry?.riskScore ??
-    posture?.riskScore ??
-    device?.riskScore ??
-    0
+  const riskScore = Math.max(
+    telemetry?.riskScore ?? 0,
+    posture?.riskScore ?? 0,
+    device?.riskScore ?? 0,
+    securityEventRisk
+  )
 
   const riskLabel =
     riskScore === 0
@@ -843,6 +859,11 @@ function App() {
             deviceId={device?.id}
             online={online}
           />
+        ) : activePage === 'activity' ? (
+          <SecurityEventCenter
+            deviceId={device?.id}
+            online={online}
+          />
         ) : (
           <AdditionalPages
             activePage={activePage}
@@ -857,6 +878,7 @@ function App() {
 }
 
 export default App
+
 
 
 

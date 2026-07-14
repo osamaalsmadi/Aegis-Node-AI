@@ -315,10 +315,7 @@ public sealed class EndpointTelemetryCollector(
                         $null -ne
                         $signature.SignerCertificate
                     ) {
-                        $signerSubject =
-                            [string]$signature
-                                .SignerCertificate
-                                .Subject
+                        $signerSubject = [string]$signature.SignerCertificate.Subject
                     }
                 }
                 catch {
@@ -374,4 +371,5 @@ public sealed class EndpointTelemetryCollector(
         ConvertTo-Json -Depth 7 -Compress
         """;
 }
+
 

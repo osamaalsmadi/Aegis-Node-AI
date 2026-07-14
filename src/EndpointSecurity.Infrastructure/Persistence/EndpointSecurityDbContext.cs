@@ -22,6 +22,10 @@ public sealed class EndpointSecurityDbContext(
     public DbSet<FindingReview> FindingReviews =>
         Set<FindingReview>();
 
+
+    public DbSet<WindowsSecurityEventRecord>
+        WindowsSecurityEvents =>
+            Set<WindowsSecurityEventRecord>();
     public DbSet<NetworkConnectionSnapshot> NetworkConnectionSnapshots =>
         Set<NetworkConnectionSnapshot>();
 
@@ -170,6 +174,66 @@ public sealed class EndpointSecurityDbContext(
             x.Fingerprint,
             x.ReviewedAtUtc
         });
+        var securityEvent =
+            modelBuilder.Entity<
+                WindowsSecurityEventRecord>();
+
+        securityEvent.ToTable(
+            "WindowsSecurityEvents");
+
+        securityEvent.HasKey(x => x.Id);
+
+        securityEvent.Property(x => x.EventKey)
+            .HasMaxLength(300)
+            .IsRequired();
+
+        securityEvent.Property(x => x.ProviderName)
+            .HasMaxLength(255)
+            .IsRequired();
+
+        securityEvent.Property(x => x.LogName)
+            .HasMaxLength(255)
+            .IsRequired();
+
+        securityEvent.Property(x => x.Level)
+            .HasMaxLength(30)
+            .IsRequired();
+
+        securityEvent.Property(x => x.Severity)
+            .HasMaxLength(30)
+            .IsRequired();
+
+        securityEvent.Property(x => x.Category)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        securityEvent.Property(x => x.Title)
+            .HasMaxLength(255)
+            .IsRequired();
+
+        securityEvent.Property(x => x.Message)
+            .HasMaxLength(4000)
+            .IsRequired();
+
+        securityEvent.HasOne<ManagedDevice>()
+            .WithMany()
+            .HasForeignKey(x => x.DeviceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        securityEvent.HasIndex(x => new
+        {
+            x.DeviceId,
+            x.EventKey
+        })
+        .IsUnique();
+
+        securityEvent.HasIndex(x => new
+        {
+            x.DeviceId,
+            x.OccurredAtUtc
+        });
+
+        securityEvent.HasIndex(x => x.Severity);
         var connection =
             modelBuilder.Entity<NetworkConnectionSnapshot>();
 
@@ -240,6 +304,7 @@ public sealed class EndpointSecurityDbContext(
         agentCommand.HasIndex(x => x.RequestedAtUtc);
     }
 }
+
 
 
 

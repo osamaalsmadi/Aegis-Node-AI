@@ -177,7 +177,7 @@ $trigger = New-ScheduledTaskTrigger `
 $principal = New-ScheduledTaskPrincipal `
     -UserId $currentUser `
     -LogonType Interactive `
-    -RunLevel Limited
+    -RunLevel Highest
 
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
@@ -263,3 +263,4 @@ URL=http://localhost:5235
     -Encoding ASCII
 
 Start-Process "http://localhost:5235"
+

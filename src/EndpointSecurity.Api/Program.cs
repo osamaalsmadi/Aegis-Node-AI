@@ -1,6 +1,7 @@
-﻿using EndpointSecurity.Application.Findings;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using EndpointSecurity.Application.Devices;
+using EndpointSecurity.Application.Findings;
+using EndpointSecurity.Application.SecurityEvents;
 using EndpointSecurity.Application.SecurityPosture;
 using EndpointSecurity.Application.Telemetry;
 using EndpointSecurity.Infrastructure.Persistence;
@@ -19,15 +20,19 @@ builder.Services
 
 builder.Services.AddOpenApi();
 
-var connectionString = builder.Configuration.GetConnectionString(
-    "EndpointSecurityDatabase")
+var connectionString =
+    builder.Configuration.GetConnectionString(
+        "EndpointSecurityDatabase")
     ?? throw new InvalidOperationException(
         "EndpointSecurityDatabase connection string was not found.");
 
-builder.Services.AddDbContext<EndpointSecurityDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<
+    EndpointSecurityDbContext>(options =>
+        options.UseSqlServer(connectionString));
 
-builder.Services.AddScoped<IDeviceService, DeviceService>();
+builder.Services.AddScoped<
+    IDeviceService,
+    DeviceService>();
 
 builder.Services.AddScoped<
     ISecurityPostureService,
@@ -36,9 +41,14 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IEndpointTelemetryService,
     EndpointTelemetryService>();
+
 builder.Services.AddScoped<
     IFindingManagementService,
     FindingManagementService>();
+
+builder.Services.AddScoped<
+    IWindowsSecurityEventService,
+    WindowsSecurityEventService>();
 
 var app = builder.Build();
 
@@ -57,4 +67,3 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 app.Run();
-
