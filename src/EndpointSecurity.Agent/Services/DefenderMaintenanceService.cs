@@ -132,8 +132,7 @@ public sealed class DefenderMaintenanceService(
         $updatedAt = if (
             $null -ne $status.AntivirusSignatureLastUpdated
         ) {
-            ([DateTime]$status.AntivirusSignatureLastUpdated)
-                .ToString('yyyy-MM-dd HH:mm:ss')
+            ([DateTime]$status.AntivirusSignatureLastUpdated).ToString('yyyy-MM-dd HH:mm:ss')
         }
         else {
             'Unknown'
@@ -170,3 +169,4 @@ public sealed class DefenderMaintenanceService(
         ConvertTo-Json -Compress
         """;
 }
+
