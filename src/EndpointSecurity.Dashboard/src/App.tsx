@@ -25,7 +25,12 @@ import {
   Wifi,
   XCircle
 } from 'lucide-react'
+import {
+  AdditionalPages,
+  type DashboardPage
+} from './AdditionalPages'
 import './App.css'
+import './pages.css'
 
 type Device = {
   id: string
@@ -173,6 +178,8 @@ function App() {
   const [error, setError] = useState('')
   const [lastRefresh, setLastRefresh] =
     useState<Date | null>(null)
+  const [activePage, setActivePage] =
+    useState<DashboardPage>('overview')
 
   const loadDashboard = useCallback(async () => {
     setLoading(true)
@@ -330,6 +337,37 @@ function App() {
       100
   )
 
+  const pageHeadings = {
+    overview: {
+      title: 'Endpoint Overview',
+      description:
+        'Live security posture and endpoint telemetry'
+    },
+    endpoints: {
+      title: 'Managed Endpoints',
+      description:
+        'Device inventory, health, versions, and connectivity'
+    },
+    findings: {
+      title: 'Security Findings',
+      description:
+        'Detected threats, suspicious behavior, and remediation'
+    },
+    network: {
+      title: 'Network Activity',
+      description:
+        'Live process-to-network connection telemetry'
+    },
+    activity: {
+      title: 'Security Activity',
+      description:
+        'Recent agent, posture, telemetry, and detection events'
+    }
+  }
+
+  const currentHeading =
+    pageHeadings[activePage]
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -345,27 +383,42 @@ function App() {
         </div>
 
         <nav className="navigation">
-          <button className="nav-item active">
+          <button
+            className={`nav-item ${activePage === 'overview' ? 'active' : ''}`}
+            onClick={() => setActivePage('overview')}
+          >
             <LayoutDashboard size={19} />
             Overview
           </button>
 
-          <button className="nav-item">
+          <button
+            className={`nav-item ${activePage === 'endpoints' ? 'active' : ''}`}
+            onClick={() => setActivePage('endpoints')}
+          >
             <Server size={19} />
             Endpoints
           </button>
 
-          <button className="nav-item">
+          <button
+            className={`nav-item ${activePage === 'findings' ? 'active' : ''}`}
+            onClick={() => setActivePage('findings')}
+          >
             <AlertTriangle size={19} />
             Findings
           </button>
 
-          <button className="nav-item">
+          <button
+            className={`nav-item ${activePage === 'network' ? 'active' : ''}`}
+            onClick={() => setActivePage('network')}
+          >
             <Network size={19} />
             Network
           </button>
 
-          <button className="nav-item">
+          <button
+            className={`nav-item ${activePage === 'activity' ? 'active' : ''}`}
+            onClick={() => setActivePage('activity')}
+          >
             <TerminalSquare size={19} />
             Activity
           </button>
@@ -387,10 +440,8 @@ function App() {
         <header className="topbar">
           <div>
             <span className="eyebrow">SECURITY OPERATIONS</span>
-            <h1>Endpoint Overview</h1>
-            <p>
-              Live security posture and endpoint telemetry
-            </p>
+            <h1>{currentHeading.title}</h1>
+            <p>{currentHeading.description}</p>
           </div>
 
           <div className="topbar-actions">
@@ -420,6 +471,8 @@ function App() {
           </div>
         )}
 
+        {activePage === 'overview' ? (
+          <>
         <section className="summary-grid">
           <article className="risk-card panel">
             <div className="panel-heading">
@@ -734,10 +787,20 @@ function App() {
             {formatDate(telemetry?.collectedAtUtc)}
           </span>
         </footer>
+          </>
+        ) : (
+          <AdditionalPages
+            activePage={activePage}
+            devices={devices}
+            telemetry={telemetry}
+            posture={posture}
+          />
+        )}
       </main>
     </div>
   )
 }
 
 export default App
+
 
