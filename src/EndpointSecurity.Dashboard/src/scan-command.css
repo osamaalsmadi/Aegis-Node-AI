@@ -1,0 +1,107 @@
+﻿.scan-command-control {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 260px;
+}
+
+.quick-scan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 126px;
+  height: 48px;
+  padding: 0 17px;
+  border: 1px solid rgba(45, 211, 255, 0.25);
+  border-radius: 13px;
+  color: #eaf6ff;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(18, 80, 111, 0.95),
+      rgba(11, 48, 70, 0.95)
+    );
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.quick-scan-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(45, 211, 255, 0.62);
+  box-shadow: 0 10px 30px rgba(0, 179, 255, 0.12);
+}
+
+.quick-scan-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.scan-command-state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 190px;
+}
+
+.scan-status {
+  color: #9fb6c9;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+}
+
+.scan-status.pending,
+.scan-status.running {
+  color: #54d8ff;
+}
+
+.scan-status.completed {
+  color: #38e8a3;
+}
+
+.scan-status.failed {
+  color: #ff7385;
+}
+
+.scan-command-state small {
+  overflow: hidden;
+  color: #718da3;
+  font-size: 11px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scan-spin {
+  animation: scan-rotation 900ms linear infinite;
+}
+
+@keyframes scan-rotation {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1150px) {
+  .scan-command-control {
+    min-width: auto;
+  }
+
+  .scan-command-state {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .quick-scan-button {
+    min-width: auto;
+    padding: 0 13px;
+  }
+}

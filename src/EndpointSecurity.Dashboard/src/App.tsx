@@ -29,6 +29,7 @@ import {
   AdditionalPages,
   type DashboardPage
 } from './AdditionalPages'
+import { ScanCommandPanel } from './ScanCommandPanel'
 import './App.css'
 import './pages.css'
 
@@ -445,6 +446,11 @@ function App() {
           </div>
 
           <div className="topbar-actions">
+            <ScanCommandPanel
+              deviceId={device?.id}
+              online={online}
+              onCompleted={loadDashboard}
+            />
             <div className="live-badge">
               <span className="pulse good" />
               Live monitoring
@@ -802,5 +808,6 @@ function App() {
 }
 
 export default App
+
 
 

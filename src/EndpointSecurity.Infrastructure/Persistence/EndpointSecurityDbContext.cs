@@ -167,5 +167,38 @@ public sealed class EndpointSecurityDbContext(
         connection.HasIndex(x => x.DeviceId);
         connection.HasIndex(x => x.RemoteAddress);
         connection.HasIndex(x => x.RemotePort);
+
+        var agentCommand =
+            modelBuilder.Entity<
+                EndpointSecurity.Domain.Entities.AgentCommand>();
+
+        agentCommand.ToTable("AgentCommands");
+        agentCommand.HasKey(x => x.Id);
+
+        agentCommand.Property(x => x.Type)
+            .HasConversion<string>()
+            .HasMaxLength(50)
+            .IsRequired();
+
+        agentCommand.Property(x => x.Status)
+            .HasConversion<string>()
+            .HasMaxLength(30)
+            .IsRequired();
+
+        agentCommand.Property(x => x.ResultMessage)
+            .HasMaxLength(1000);
+
+        agentCommand.Property(x => x.ErrorMessage)
+            .HasMaxLength(2000);
+
+        agentCommand.HasIndex(
+            x => new
+            {
+                x.DeviceId,
+                x.Status
+            });
+
+        agentCommand.HasIndex(x => x.RequestedAtUtc);
     }
 }
+
