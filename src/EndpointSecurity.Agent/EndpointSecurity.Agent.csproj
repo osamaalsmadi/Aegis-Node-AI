@@ -13,6 +13,5 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EndpointSecurity.Application\EndpointSecurity.Application.csproj" />
-    <ProjectReference Include="..\EndpointSecurity.Infrastructure\EndpointSecurity.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
