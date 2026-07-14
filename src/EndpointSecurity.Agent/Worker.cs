@@ -15,6 +15,7 @@ public sealed class Worker(
     DeviceIdentityProvider identityProvider,
     WindowsSecurityCollector securityCollector,
     EndpointTelemetryCollector telemetryCollector,
+    DefenderMalwareScanner malwareScanner,
     IConfiguration configuration) : BackgroundService
 {
     protected override async Task ExecuteAsync(
@@ -41,11 +42,23 @@ public sealed class Worker(
                     "Agent:TelemetryScanIntervalSeconds",
                     300)));
 
+        var malwareScanInterval = TimeSpan.FromHours(
+            Math.Max(
+                1,
+                configuration.GetValue(
+                    "Agent:MalwareScanIntervalHours",
+                    24)));
+
         var deviceId =
             identityProvider.GetOrCreateDeviceId();
 
         var nextSecurityScanUtc = DateTime.MinValue;
         var nextTelemetryScanUtc = DateTime.MinValue;
+        var nextMalwareScanUtc = DateTime.MinValue;
+
+        IReadOnlyList<SubmitFindingRequest>
+            pendingMalwareFindings =
+                Array.Empty<SubmitFindingRequest>();
 
         logger.LogInformation(
             "Endpoint Security Agent started with ID {DeviceId}.",
@@ -71,12 +84,30 @@ public sealed class Worker(
             }
 
             if (registered &&
+                DateTime.UtcNow >= nextMalwareScanUtc)
+            {
+                pendingMalwareFindings =
+                    await RunMalwareScanAsync(
+                        stoppingToken);
+
+                nextMalwareScanUtc =
+                    DateTime.UtcNow.Add(
+                        malwareScanInterval);
+            }
+
+            if (registered &&
                 DateTime.UtcNow >= nextTelemetryScanUtc)
             {
-                if (await SubmitTelemetryAsync(
-                        deviceId,
-                        stoppingToken))
+                var submitted = await SubmitTelemetryAsync(
+                    deviceId,
+                    pendingMalwareFindings,
+                    stoppingToken);
+
+                if (submitted)
                 {
+                    pendingMalwareFindings =
+                        Array.Empty<SubmitFindingRequest>();
+
                     nextTelemetryScanUtc =
                         DateTime.UtcNow.Add(
                             telemetryScanInterval);
@@ -122,6 +153,11 @@ public sealed class Worker(
                 "Device registration heartbeat sent.");
 
             return true;
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
         }
         catch (Exception exception)
         {
@@ -170,8 +206,30 @@ public sealed class Worker(
         }
     }
 
+    private async Task<
+        IReadOnlyList<SubmitFindingRequest>>
+        RunMalwareScanAsync(
+            CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await malwareScanner.RunQuickScanAsync(
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Microsoft Defender Quick Scan failed.");
+
+            return Array.Empty<SubmitFindingRequest>();
+        }
+    }
+
     private async Task<bool> SubmitTelemetryAsync(
         Guid deviceId,
+        IReadOnlyList<SubmitFindingRequest>
+            additionalFindings,
         CancellationToken cancellationToken)
     {
         try
@@ -180,9 +238,18 @@ public sealed class Worker(
                 deviceId,
                 cancellationToken);
 
+            var combinedFindings = request.Findings
+                .Concat(additionalFindings)
+                .ToList();
+
+            var combinedRequest = request with
+            {
+                Findings = combinedFindings
+            };
+
             using var response = await httpClient.PostAsJsonAsync(
                 "api/telemetry",
-                request,
+                combinedRequest,
                 cancellationToken);
 
             response.EnsureSuccessStatusCode();
