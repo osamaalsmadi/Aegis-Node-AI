@@ -10,6 +10,7 @@
   ShieldCheck,
   Wifi
 } from 'lucide-react'
+import { FindingManagement } from './FindingManagement'
 
 export type DashboardPage =
   | 'overview'
@@ -155,6 +156,14 @@ export function AdditionalPages({
 }: Props) {
   const connections = telemetry?.connections ?? []
   const findings = telemetry?.findings ?? []
+
+  if (activePage === 'findings') {
+    return (
+      <FindingManagement
+        deviceId={telemetry?.deviceId}
+      />
+    )
+  }
 
   if (activePage === 'endpoints') {
     const onlineDevices = devices.filter((device) =>
@@ -658,5 +667,6 @@ export function AdditionalPages({
     </div>
   )
 }
+
 
 

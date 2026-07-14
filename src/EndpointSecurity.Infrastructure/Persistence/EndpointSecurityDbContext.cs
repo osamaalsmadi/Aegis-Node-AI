@@ -19,6 +19,9 @@ public sealed class EndpointSecurityDbContext(
     public DbSet<SecurityFinding> SecurityFindings =>
         Set<SecurityFinding>();
 
+    public DbSet<FindingReview> FindingReviews =>
+        Set<FindingReview>();
+
     public DbSet<NetworkConnectionSnapshot> NetworkConnectionSnapshots =>
         Set<NetworkConnectionSnapshot>();
 
@@ -134,6 +137,39 @@ public sealed class EndpointSecurityDbContext(
         finding.HasIndex(x => x.DeviceId);
         finding.HasIndex(x => x.Severity);
 
+        var review =
+            modelBuilder.Entity<FindingReview>();
+
+        review.ToTable("FindingReviews");
+        review.HasKey(x => x.Id);
+
+        review.Property(x => x.Fingerprint)
+            .HasMaxLength(64)
+            .IsRequired();
+
+        review.Property(x => x.Status)
+            .HasConversion<string>()
+            .HasMaxLength(30)
+            .IsRequired();
+
+        review.Property(x => x.AnalystNote)
+            .HasMaxLength(1000);
+
+        review.Property(x => x.AnalystName)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        review.HasOne<SecurityFinding>()
+            .WithMany()
+            .HasForeignKey(x => x.FindingId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        review.HasIndex(x => new
+        {
+            x.DeviceId,
+            x.Fingerprint,
+            x.ReviewedAtUtc
+        });
         var connection =
             modelBuilder.Entity<NetworkConnectionSnapshot>();
 
@@ -204,5 +240,6 @@ public sealed class EndpointSecurityDbContext(
         agentCommand.HasIndex(x => x.RequestedAtUtc);
     }
 }
+
 
 

@@ -67,6 +67,7 @@ type SecurityFinding = {
   title?: string
   description?: string
   severity?: string | number
+  status?: string
 }
 
 type Telemetry = {
@@ -327,7 +328,11 @@ function App() {
     securityChecks.filter((check) => check.healthy).length
 
   const findingsCount =
-    telemetry?.findings?.length ?? 0
+    (telemetry?.findings ?? []).filter(
+      (finding) =>
+        !finding.status ||
+        finding.status.toLowerCase() === 'open'
+    ).length
 
   const processPercent = Math.min(
     100,
@@ -846,6 +851,7 @@ function App() {
 }
 
 export default App
+
 
 
 

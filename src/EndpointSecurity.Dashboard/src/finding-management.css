@@ -1,0 +1,299 @@
+﻿.finding-management {
+  display: grid;
+  gap: 22px;
+}
+
+.finding-management-error {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 15px 18px;
+  color: #ff8ba0;
+  background: rgba(113, 32, 55, 0.28);
+  border: 1px solid rgba(255, 82, 118, 0.45);
+  border-radius: 14px;
+}
+
+.finding-management-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.finding-management-metrics article {
+  min-height: 140px;
+  padding: 25px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 11px 17px;
+  background: #102a40;
+  border: 1px solid #21435d;
+  border-radius: 20px;
+}
+
+.finding-management-metrics svg {
+  color: #35d8ff;
+}
+
+.finding-management-metrics span {
+  color: #8db7d7;
+}
+
+.finding-management-metrics strong {
+  grid-column: 2;
+  font-size: 34px;
+}
+
+.finding-management-panel {
+  overflow: hidden;
+  background: #102a40;
+  border: 1px solid #21435d;
+  border-radius: 20px;
+}
+
+.finding-management-heading {
+  padding: 26px 30px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  border-bottom: 1px solid #21435d;
+}
+
+.finding-management-heading span {
+  color: #25d8ff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+}
+
+.finding-management-heading h2 {
+  margin: 7px 0 0;
+  font-size: 29px;
+}
+
+.finding-management-heading p {
+  margin: 8px 0 0;
+  color: #8db7d7;
+}
+
+.finding-management-heading button,
+.finding-management-reviewed button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 17px;
+  color: #eaf7ff;
+  background: #123c57;
+  border: 1px solid #246789;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.finding-management-list {
+  display: grid;
+  gap: 16px;
+  padding: 25px;
+}
+
+.finding-management-list > article {
+  padding: 22px;
+  background: #0c2235;
+  border: 1px solid #21435d;
+  border-radius: 16px;
+}
+
+.finding-management-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.finding-management-severity,
+.finding-management-status {
+  display: inline-flex;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 999px;
+}
+
+.finding-management-severity.medium {
+  color: #ffc75a;
+  background: rgba(255, 174, 48, 0.14);
+}
+
+.finding-management-severity.high,
+.finding-management-severity.critical {
+  color: #ff7890;
+  background: rgba(255, 70, 105, 0.14);
+}
+
+.finding-management-status.open {
+  color: #ffc75a;
+  background: rgba(255, 174, 48, 0.14);
+}
+
+.finding-management-status.resolved {
+  color: #36edb1;
+  background: rgba(30, 210, 150, 0.14);
+}
+
+.finding-management-status.falsepositive {
+  color: #62d8ff;
+  background: rgba(45, 190, 255, 0.14);
+}
+
+.finding-management-status.ignored {
+  color: #b7a6ff;
+  background: rgba(130, 105, 255, 0.16);
+}
+
+.finding-management-list h3 {
+  margin: 18px 0 8px;
+  font-size: 22px;
+}
+
+.finding-management-list p {
+  color: #9ac0dc;
+  line-height: 1.65;
+}
+
+.finding-management-list dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.finding-management-list dl div {
+  padding: 13px;
+  background: #102a40;
+  border-radius: 10px;
+}
+
+.finding-management-list dt {
+  margin-bottom: 5px;
+  color: #6f9cbb;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.finding-management-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.finding-management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.finding-management-actions button {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  padding: 10px 14px;
+  color: #ecf8ff;
+  background: #153c56;
+  border: 1px solid #2a6688;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.finding-management-actions .resolve {
+  border-color: rgba(44, 224, 166, 0.48);
+}
+
+.finding-management-actions .false-positive {
+  border-color: rgba(53, 205, 255, 0.55);
+}
+
+.finding-management-actions .ignore {
+  border-color: rgba(166, 135, 255, 0.55);
+}
+
+.finding-management-empty {
+  padding: 65px 25px;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  color: #42eab4;
+}
+
+.finding-management-empty strong {
+  font-size: 22px;
+}
+
+.finding-management-empty span {
+  color: #8db7d7;
+}
+
+.finding-management-reviewed {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+}
+
+.finding-management-reviewed article {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  padding: 17px;
+  background: #0c2235;
+  border-radius: 13px;
+}
+
+.finding-management-reviewed span,
+.finding-management-reviewed p {
+  display: block;
+  margin: 5px 0 0;
+  color: #8db7d7;
+}
+
+.finding-management-table {
+  overflow-x: auto;
+}
+
+.finding-management-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.finding-management-table th,
+.finding-management-table td {
+  padding: 17px 22px;
+  text-align: left;
+  border-bottom: 1px solid #21435d;
+}
+
+.finding-management-table th {
+  color: #719bb9;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 1050px) {
+  .finding-management-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .finding-management-list dl {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .finding-management-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .finding-management-heading,
+  .finding-management-reviewed article {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

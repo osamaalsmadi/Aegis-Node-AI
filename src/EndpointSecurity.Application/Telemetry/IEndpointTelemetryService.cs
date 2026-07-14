@@ -51,6 +51,11 @@ public sealed record FindingResponse(
     int? ProcessId,
     string? FilePath,
     string? CommandLine,
+    string Fingerprint,
+    string Status,
+    string? AnalystNote,
+    string? AnalystName,
+    DateTime? ReviewedAtUtc,
     DateTime DetectedAtUtc);
 
 public sealed record EndpointTelemetryResponse(

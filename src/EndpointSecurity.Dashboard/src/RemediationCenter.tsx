@@ -27,6 +27,7 @@ type Finding = {
   processId?: number | null
   filePath?: string | null
   remoteAddress?: string | null
+  status?: string
 }
 
 type Telemetry = {
@@ -177,7 +178,13 @@ export function RemediationCenter({
       const commandHistory =
         (await historyResponse.json()) as AgentCommand[]
 
-      setFindings(telemetry.findings ?? [])
+      setFindings(
+        (telemetry.findings ?? []).filter(
+          (finding) =>
+            !finding.status ||
+            finding.status.toLowerCase() === 'open'
+        )
+      )
       setHistory(commandHistory)
       setError('')
     } catch (requestError) {
@@ -580,3 +587,4 @@ export function RemediationCenter({
     </div>
   )
 }
+

@@ -1,6 +1,7 @@
 ﻿using EndpointSecurity.Application.Telemetry;
 using EndpointSecurity.Domain.Entities;
 using EndpointSecurity.Domain.Enums;
+using EndpointSecurity.Domain.Services;
 using EndpointSecurity.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,8 +30,41 @@ public sealed class EndpointTelemetryService(
             request.Connections ??
             Array.Empty<SubmitNetworkConnectionRequest>();
 
-        var telemetryRisk =
-            CalculateRiskScore(incomingFindings);
+        var requestFingerprints = incomingFindings
+            .Select(x => FindingFingerprint.Create(
+                x.Category,
+                x.Title,
+                x.ProcessName,
+                x.FilePath))
+            .Distinct()
+            .ToList();
+
+        var existingReviews =
+            await LoadLatestReviewsAsync(
+                request.DeviceId,
+                requestFingerprints,
+                cancellationToken);
+
+        var activeIncoming = incomingFindings
+            .Where(x =>
+            {
+                var fingerprint =
+                    FindingFingerprint.Create(
+                        x.Category,
+                        x.Title,
+                        x.ProcessName,
+                        x.FilePath);
+
+                return !existingReviews.TryGetValue(
+                           fingerprint,
+                           out var review) ||
+                       review.Status ==
+                           FindingReviewStatus.Open;
+            })
+            .ToList();
+
+        var telemetryRisk = CalculateRiskScore(
+            activeIncoming.Select(x => x.Severity));
 
         var scan = new EndpointTelemetryScan(
             request.DeviceId,
@@ -80,26 +114,25 @@ public sealed class EndpointTelemetryService(
 
         if (connections.Count > 0)
         {
-            await dbContext.NetworkConnectionSnapshots.AddRangeAsync(
-                connections,
-                cancellationToken);
+            await dbContext.NetworkConnectionSnapshots
+                .AddRangeAsync(
+                    connections,
+                    cancellationToken);
         }
-
-        var overallRisk = Math.Max(
-            device.RiskScore,
-            telemetryRisk);
 
         device.UpdateHeartbeat(
             device.AgentVersion,
-            GetDeviceStatus(overallRisk),
-            overallRisk);
+            GetDeviceStatus(telemetryRisk),
+            telemetryRisk);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.SaveChangesAsync(
+            cancellationToken);
 
         return ToResponse(
             scan,
             connections,
-            findings);
+            findings,
+            existingReviews);
     }
 
     public async Task<EndpointTelemetryResponse?> GetLatestAsync(
@@ -115,11 +148,12 @@ public sealed class EndpointTelemetryService(
         if (scan is null)
             return null;
 
-        var connections = await dbContext.NetworkConnectionSnapshots
-            .AsNoTracking()
-            .Where(x => x.ScanId == scan.Id)
-            .OrderBy(x => x.ProcessName)
-            .ToListAsync(cancellationToken);
+        var connections =
+            await dbContext.NetworkConnectionSnapshots
+                .AsNoTracking()
+                .Where(x => x.ScanId == scan.Id)
+                .OrderBy(x => x.ProcessName)
+                .ToListAsync(cancellationToken);
 
         var findings = await dbContext.SecurityFindings
             .AsNoTracking()
@@ -127,22 +161,64 @@ public sealed class EndpointTelemetryService(
             .OrderByDescending(x => x.Severity)
             .ToListAsync(cancellationToken);
 
+        var reviews = await LoadLatestReviewsAsync(
+            deviceId,
+            findings.Select(FindingFingerprint.Create),
+            cancellationToken);
+
         return ToResponse(
             scan,
             connections,
-            findings);
+            findings,
+            reviews);
+    }
+
+    private async Task<
+        IReadOnlyDictionary<string, FindingReview>>
+        LoadLatestReviewsAsync(
+            Guid deviceId,
+            IEnumerable<string> fingerprints,
+            CancellationToken cancellationToken)
+    {
+        var values = fingerprints
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (values.Count == 0)
+        {
+            return new Dictionary<string, FindingReview>(
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        var reviews = await dbContext.FindingReviews
+            .AsNoTracking()
+            .Where(x =>
+                x.DeviceId == deviceId &&
+                values.Contains(x.Fingerprint))
+            .OrderByDescending(x => x.ReviewedAtUtc)
+            .ToListAsync(cancellationToken);
+
+        return reviews
+            .GroupBy(
+                x => x.Fingerprint,
+                StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                group => group.Key,
+                group => group.First(),
+                StringComparer.OrdinalIgnoreCase);
     }
 
     private static int CalculateRiskScore(
-        IReadOnlyList<SubmitFindingRequest> findings)
+        IEnumerable<FindingSeverity> severities)
     {
-        var score = findings.Sum(x => x.Severity switch
-        {
-            FindingSeverity.Critical => 50,
-            FindingSeverity.High => 30,
-            FindingSeverity.Medium => 15,
-            _ => 5
-        });
+        var score = severities.Sum(severity =>
+            severity switch
+            {
+                FindingSeverity.Critical => 50,
+                FindingSeverity.High => 30,
+                FindingSeverity.Medium => 15,
+                _ => 5
+            });
 
         return Math.Min(score, 100);
     }
@@ -160,7 +236,8 @@ public sealed class EndpointTelemetryService(
     private static EndpointTelemetryResponse ToResponse(
         EndpointTelemetryScan scan,
         IReadOnlyList<NetworkConnectionSnapshot> connections,
-        IReadOnlyList<SecurityFinding> findings)
+        IReadOnlyList<SecurityFinding> findings,
+        IReadOnlyDictionary<string, FindingReview> reviews)
     {
         var connectionResponses = connections
             .Select(x => new NetworkConnectionResponse(
@@ -177,25 +254,56 @@ public sealed class EndpointTelemetryService(
             .ToList();
 
         var findingResponses = findings
-            .Select(x => new FindingResponse(
-                x.Id,
-                x.Category.ToString(),
-                x.Severity.ToString(),
-                x.Title,
-                x.Description,
-                x.ProcessName,
-                x.ProcessId,
-                x.FilePath,
-                x.CommandLine,
-                x.DetectedAtUtc))
+            .Select(x =>
+            {
+                var fingerprint =
+                    FindingFingerprint.Create(x);
+
+                reviews.TryGetValue(
+                    fingerprint,
+                    out var review);
+
+                return new FindingResponse(
+                    x.Id,
+                    x.Category.ToString(),
+                    x.Severity.ToString(),
+                    x.Title,
+                    x.Description,
+                    x.ProcessName,
+                    x.ProcessId,
+                    x.FilePath,
+                    x.CommandLine,
+                    fingerprint,
+                    review?.Status.ToString() ??
+                        FindingReviewStatus.Open.ToString(),
+                    review?.AnalystNote,
+                    review?.AnalystName,
+                    review?.ReviewedAtUtc,
+                    x.DetectedAtUtc);
+            })
             .ToList();
+
+        var activeRisk = CalculateRiskScore(
+            findings
+                .Where(x =>
+                {
+                    var fingerprint =
+                        FindingFingerprint.Create(x);
+
+                    return !reviews.TryGetValue(
+                               fingerprint,
+                               out var review) ||
+                           review.Status ==
+                               FindingReviewStatus.Open;
+                })
+                .Select(x => x.Severity));
 
         return new EndpointTelemetryResponse(
             scan.Id,
             scan.DeviceId,
             scan.ProcessCount,
             scan.ActiveTcpConnectionCount,
-            scan.RiskScore,
+            activeRisk,
             scan.CollectedAtUtc,
             connectionResponses,
             findingResponses);

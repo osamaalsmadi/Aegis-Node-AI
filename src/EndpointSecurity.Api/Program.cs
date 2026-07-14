@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using EndpointSecurity.Application.Findings;
+using System.Text.Json.Serialization;
 using EndpointSecurity.Application.Devices;
 using EndpointSecurity.Application.SecurityPosture;
 using EndpointSecurity.Application.Telemetry;
@@ -35,6 +36,9 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IEndpointTelemetryService,
     EndpointTelemetryService>();
+builder.Services.AddScoped<
+    IFindingManagementService,
+    FindingManagementService>();
 
 var app = builder.Build();
 
@@ -53,3 +57,4 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+

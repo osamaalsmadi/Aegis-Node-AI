@@ -299,6 +299,37 @@ public sealed class EndpointTelemetryCollector(
                 $path -match
                 '(?i)(\\AppData\\Local\\Temp\\|\\Windows\\Temp\\|\\Users\\Public\\)'
             ) {
+                $signatureStatus = 'Unavailable'
+                $signerSubject = 'No publisher'
+
+                try {
+                    $signature =
+                        Get-AuthenticodeSignature `
+                            -FilePath $path `
+                            -ErrorAction Stop
+
+                    $signatureStatus =
+                        [string]$signature.Status
+
+                    if (
+                        $null -ne
+                        $signature.SignerCertificate
+                    ) {
+                        $signerSubject =
+                            [string]$signature
+                                .SignerCertificate
+                                .Subject
+                    }
+                }
+                catch {
+                    $signatureStatus = 'Unavailable'
+                }
+
+                $findingDescription =
+                    'A process is running from a temporary or public directory. ' +
+                    "Digital signature: $signatureStatus. " +
+                    "Publisher: $signerSubject."
+
                 $findings += [pscustomobject]@{
                     Category =
                         'SuspiciousFileLocation'
@@ -310,7 +341,7 @@ public sealed class EndpointTelemetryCollector(
                         'Process running from a risky location'
 
                     Description =
-                        'A process is running from a temporary or public directory.'
+                        $findingDescription
 
                     ProcessName =
                         $name
@@ -343,3 +374,4 @@ public sealed class EndpointTelemetryCollector(
         ConvertTo-Json -Depth 7 -Compress
         """;
 }
+
