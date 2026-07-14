@@ -27,9 +27,11 @@ builder.Services.AddDbContext<EndpointSecurityDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IDeviceService, DeviceService>();
+
 builder.Services.AddScoped<
     ISecurityPostureService,
     SecurityPostureService>();
+
 builder.Services.AddScoped<
     IEndpointTelemetryService,
     EndpointTelemetryService>();
@@ -41,7 +43,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthorization();
+
 app.MapControllers();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();
