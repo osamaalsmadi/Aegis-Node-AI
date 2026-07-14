@@ -156,6 +156,47 @@ export function AdditionalPages({
 }: Props) {
   const connections = telemetry?.connections ?? []
   const findings = telemetry?.findings ?? []
+  async function removeOfflineDevice(
+    device: DeviceRecord
+  ): Promise<void> {
+    if (isOnline(device.lastSeenUtc)) {
+      window.alert(
+        'The online endpoint cannot be removed.'
+      )
+      return
+    }
+
+    const confirmed = window.confirm(
+      `Remove ${device.hostName}?\n\n` +
+      'Its stored telemetry and scan history will also be removed.'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    const response = await fetch(
+      `/api/devices/${device.id}`,
+      {
+        method: 'DELETE'
+      }
+    )
+
+    if (!response.ok) {
+      const message = await response.text()
+
+      window.alert(
+        `Device removal failed: ${message}`
+      )
+      return
+    }
+
+    window.alert(
+      `${device.hostName} was removed successfully.`
+    )
+
+    window.location.reload()
+  }
 
   if (activePage === 'findings') {
     return (
@@ -405,6 +446,7 @@ export function AdditionalPages({
     </div>
   )
 }
+
 
 
 

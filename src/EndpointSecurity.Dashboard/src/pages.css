@@ -229,3 +229,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+.endpoint-remove-button {
+  border: 1px solid rgba(255, 89, 115, 0.55);
+  border-radius: 10px;
+  padding: 9px 15px;
+  color: #ff718a;
+  background: rgba(255, 71, 102, 0.12);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.endpoint-remove-button:hover {
+  background: rgba(255, 71, 102, 0.22);
+  border-color: #ff718a;
+  transform: translateY(-1px);
+}
