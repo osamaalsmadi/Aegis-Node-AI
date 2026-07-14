@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EndpointSecurity.Agent/EndpointSecurity.Agent.csproj" />
+    <Project Path="src/EndpointSecurity.Api/EndpointSecurity.Api.csproj" />
+    <Project Path="src/EndpointSecurity.Application/EndpointSecurity.Application.csproj" />
+    <Project Path="src/EndpointSecurity.Domain/EndpointSecurity.Domain.csproj" />
+    <Project Path="src/EndpointSecurity.Infrastructure/EndpointSecurity.Infrastructure.csproj" />
+  </Folder>
+</Solution>
