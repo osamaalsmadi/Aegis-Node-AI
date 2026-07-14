@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using EndpointSecurity.Agent.Services;
 using EndpointSecurity.Application.Devices;
+using EndpointSecurity.Application.SecurityPosture;
 using Microsoft.Win32;
 
 namespace EndpointSecurity.Agent;
@@ -11,29 +12,65 @@ public sealed class Worker(
     ILogger<Worker> logger,
     HttpClient httpClient,
     DeviceIdentityProvider identityProvider,
+    WindowsSecurityCollector securityCollector,
     IConfiguration configuration) : BackgroundService
 {
     protected override async Task ExecuteAsync(
         CancellationToken stoppingToken)
     {
-        var intervalSeconds = Math.Max(
+        var heartbeatSeconds = Math.Max(
             10,
             configuration.GetValue(
                 "Agent:HeartbeatIntervalSeconds",
                 60));
 
-        var interval = TimeSpan.FromSeconds(intervalSeconds);
+        var securityScanSeconds = Math.Max(
+            60,
+            configuration.GetValue(
+                "Agent:SecurityScanIntervalSeconds",
+                300));
+
+        var heartbeatInterval =
+            TimeSpan.FromSeconds(heartbeatSeconds);
+
+        var securityScanInterval =
+            TimeSpan.FromSeconds(securityScanSeconds);
+
+        var deviceId =
+            identityProvider.GetOrCreateDeviceId();
+
+        var nextSecurityScanUtc = DateTime.MinValue;
 
         logger.LogInformation(
-            "Endpoint Security Agent started.");
+            "Endpoint Security Agent started with ID {DeviceId}.",
+            deviceId);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            await RegisterDeviceAsync(stoppingToken);
+            var registered = await RegisterDeviceAsync(
+                deviceId,
+                stoppingToken);
+
+            if (registered &&
+                DateTime.UtcNow >= nextSecurityScanUtc)
+            {
+                var submitted = await SubmitSecurityPostureAsync(
+                    deviceId,
+                    stoppingToken);
+
+                if (submitted)
+                {
+                    nextSecurityScanUtc =
+                        DateTime.UtcNow.Add(
+                            securityScanInterval);
+                }
+            }
 
             try
             {
-                await Task.Delay(interval, stoppingToken);
+                await Task.Delay(
+                    heartbeatInterval,
+                    stoppingToken);
             }
             catch (OperationCanceledException)
                 when (stoppingToken.IsCancellationRequested)
@@ -43,13 +80,12 @@ public sealed class Worker(
         }
     }
 
-    private async Task RegisterDeviceAsync(
+    private async Task<bool> RegisterDeviceAsync(
+        Guid deviceId,
         CancellationToken cancellationToken)
     {
         try
         {
-            var deviceId = identityProvider.GetOrCreateDeviceId();
-
             var request = new RegisterDeviceRequest(
                 deviceId,
                 Environment.MachineName,
@@ -66,19 +102,65 @@ public sealed class Worker(
             response.EnsureSuccessStatusCode();
 
             logger.LogInformation(
-                "Device {DeviceId} registered successfully at {Time}.",
-                deviceId,
-                DateTimeOffset.Now);
+                "Device registration heartbeat sent.");
+
+            return true;
         }
         catch (OperationCanceledException)
             when (cancellationToken.IsCancellationRequested)
         {
+            return false;
         }
         catch (Exception exception)
         {
             logger.LogError(
                 exception,
-                "Agent could not contact the API. It will retry.");
+                "Agent could not register with the API.");
+
+            return false;
+        }
+    }
+
+    private async Task<bool> SubmitSecurityPostureAsync(
+        Guid deviceId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = await securityCollector.CollectAsync(
+                deviceId,
+                cancellationToken);
+
+            using var response = await httpClient.PostAsJsonAsync(
+                "api/security-posture",
+                request,
+                cancellationToken);
+
+            response.EnsureSuccessStatusCode();
+
+            var result =
+                await response.Content.ReadFromJsonAsync<
+                    SecurityPostureResponse>(
+                    cancellationToken);
+
+            logger.LogInformation(
+                "Security posture submitted. Risk score: {RiskScore}.",
+                result?.RiskScore);
+
+            return true;
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            return false;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Security posture submission failed.");
+
+            return false;
         }
     }
 

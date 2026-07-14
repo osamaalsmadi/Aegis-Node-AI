@@ -1,4 +1,4 @@
-using EndpointSecurity.Domain.Entities;
+﻿using EndpointSecurity.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EndpointSecurity.Infrastructure.Persistence;
@@ -10,6 +10,9 @@ public sealed class EndpointSecurityDbContext(
     public DbSet<ManagedDevice> ManagedDevices =>
         Set<ManagedDevice>();
 
+    public DbSet<SecurityPostureSnapshot> SecurityPostureSnapshots =>
+        Set<SecurityPostureSnapshot>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -17,7 +20,6 @@ public sealed class EndpointSecurityDbContext(
         var device = modelBuilder.Entity<ManagedDevice>();
 
         device.ToTable("ManagedDevices");
-
         device.HasKey(x => x.Id);
 
         device.Property(x => x.HostName)
@@ -50,5 +52,28 @@ public sealed class EndpointSecurityDbContext(
 
         device.HasIndex(x => x.HostName);
         device.HasIndex(x => x.LastSeenUtc);
+
+        var snapshot =
+            modelBuilder.Entity<SecurityPostureSnapshot>();
+
+        snapshot.ToTable("SecurityPostureSnapshots");
+        snapshot.HasKey(x => x.Id);
+
+        snapshot.Property(x => x.RiskScore)
+            .IsRequired();
+
+        snapshot.Property(x => x.CollectedAtUtc)
+            .IsRequired();
+
+        snapshot.HasOne<ManagedDevice>()
+            .WithMany()
+            .HasForeignKey(x => x.DeviceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        snapshot.HasIndex(x => new
+        {
+            x.DeviceId,
+            x.CollectedAtUtc
+        });
     }
 }
