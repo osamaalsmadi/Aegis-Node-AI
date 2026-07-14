@@ -1,0 +1,391 @@
+﻿.ai-analyst {
+  display: grid;
+  gap: 24px;
+}
+
+.ai-control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.ai-status-card,
+.ai-workspace,
+.ai-empty,
+.ai-summary-card,
+.ai-list-card {
+  border: 1px solid #1d4660;
+  background: #102a40;
+  border-radius: 22px;
+}
+
+.ai-status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 135px;
+  padding: 24px;
+}
+
+.ai-status-card > div:nth-child(2) {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+}
+
+.ai-status-card span,
+.ai-status-card small {
+  color: #87b7d5;
+}
+
+.ai-status-card strong {
+  color: #f4f8ff;
+  font-size: 20px;
+}
+
+.ai-card-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  color: #31d8ff;
+  background: #123e56;
+}
+
+.ai-status {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-status.good {
+  color: #36eca6;
+  background: rgba(54, 236, 166, 0.1);
+}
+
+.ai-status.bad {
+  color: #ff6377;
+  background: rgba(255, 99, 119, 0.1);
+}
+
+.ai-good-icon {
+  color: #36eca6;
+}
+
+.ai-spark-icon {
+  color: #aa7cff;
+}
+
+.ai-workspace {
+  overflow: hidden;
+}
+
+.ai-workspace-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px 32px;
+  border-bottom: 1px solid #1c455e;
+}
+
+.ai-workspace-header h2,
+.ai-list-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: #f5f8ff;
+  margin: 8px 0;
+}
+
+.ai-workspace-header p,
+.ai-list-card p,
+.ai-summary-card p {
+  color: #91bdd8;
+  line-height: 1.65;
+}
+
+.ai-language {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-language select {
+  min-width: 130px;
+  color: #eaf5ff;
+  background: #0c2236;
+  border: 1px solid #27617d;
+  border-radius: 11px;
+  padding: 11px 13px;
+}
+
+.ai-question {
+  display: grid;
+  gap: 11px;
+  padding: 28px 32px 32px;
+}
+
+.ai-question label {
+  color: #d9edfa;
+  font-weight: 700;
+}
+
+.ai-question textarea {
+  min-height: 105px;
+  resize: vertical;
+  color: #eff8ff;
+  background: #091e31;
+  border: 1px solid #235470;
+  border-radius: 15px;
+  padding: 16px;
+  font: inherit;
+  line-height: 1.55;
+}
+
+.ai-question textarea:focus {
+  outline: 2px solid rgba(49, 216, 255, 0.25);
+  border-color: #31d8ff;
+}
+
+.ai-question-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.ai-question-footer span {
+  color: #769fba;
+  font-size: 14px;
+}
+
+.ai-question-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: white;
+  background: #126486;
+  border: 1px solid #25c9f3;
+  border-radius: 13px;
+  padding: 13px 20px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ai-question-footer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.ai-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ff9caa;
+  background: rgba(255, 78, 105, 0.1);
+  border: 1px solid #843647;
+  border-radius: 14px;
+  padding: 15px 18px;
+  margin: 0 32px 28px;
+}
+
+.ai-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  color: #779db6;
+  padding: 50px 25px;
+  text-align: center;
+}
+
+.ai-empty svg {
+  color: #31d8ff;
+}
+
+.ai-empty h3 {
+  color: #e8f4fc;
+  margin: 4px 0;
+}
+
+.ai-result {
+  display: grid;
+  gap: 22px;
+}
+
+.ai-result.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.ai-summary-card {
+  padding: 30px 32px;
+}
+
+.ai-summary-card header,
+.ai-summary-card footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.ai-summary-card h2 {
+  margin: 7px 0;
+  color: #f3f8ff;
+}
+
+.ai-summary-card footer {
+  justify-content: flex-start;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid #1f485f;
+  color: #769fba;
+}
+
+.ai-summary-card footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ai-risk,
+.ai-severity {
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-weight: 800;
+}
+
+.ai-risk.safe,
+.ai-severity.safe {
+  color: #36eca6;
+  background: rgba(54, 236, 166, 0.1);
+}
+
+.ai-risk.warning,
+.ai-severity.warning {
+  color: #ffbd5a;
+  background: rgba(255, 189, 90, 0.12);
+}
+
+.ai-risk.danger,
+.ai-severity.danger {
+  color: #ff6377;
+  background: rgba(255, 99, 119, 0.12);
+}
+
+.ai-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.ai-list-card {
+  overflow: hidden;
+}
+
+.ai-list-card > header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 25px 27px;
+  border-bottom: 1px solid #1d465e;
+  color: #31d8ff;
+}
+
+.ai-list-card h3 {
+  margin: 5px 0 0;
+}
+
+.ai-list {
+  display: grid;
+}
+
+.ai-list-item,
+.ai-action-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 21px 25px;
+  border-bottom: 1px solid #183e55;
+}
+
+.ai-list-item:last-child,
+.ai-action-item:last-child {
+  border-bottom: 0;
+}
+
+.ai-list-item > div,
+.ai-action-item > div {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.ai-list-item strong,
+.ai-action-item strong {
+  color: #f0f7fc;
+}
+
+.ai-list-item p,
+.ai-action-item p {
+  margin: 0;
+  color: #87b2ce;
+  line-height: 1.55;
+}
+
+.ai-priority {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  height: 34px;
+  color: #081b2b;
+  background: #31d8ff;
+  border-radius: 50%;
+  font-weight: 900;
+}
+
+.ai-action-item code {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  direction: ltr;
+  text-align: left;
+  overflow-wrap: anywhere;
+  color: #bcdcf0;
+  background: #081d2e;
+  border: 1px solid #1f506a;
+  border-radius: 10px;
+  padding: 11px;
+}
+
+.ai-muted {
+  padding: 25px;
+  margin: 0;
+}
+
+@media (max-width: 1150px) {
+  .ai-control-grid,
+  .ai-result-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .ai-workspace-header,
+  .ai-question-footer,
+  .ai-summary-card header,
+  .ai-summary-card footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-language {
+    width: 100%;
+  }
+
+  .ai-language select {
+    flex: 1;
+  }
+}

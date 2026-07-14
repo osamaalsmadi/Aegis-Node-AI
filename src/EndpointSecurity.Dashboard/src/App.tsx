@@ -8,6 +8,7 @@
 import {
   Activity,
   AlertTriangle,
+  Bot,
   CheckCircle2,
   CircleGauge,
   Clock3,
@@ -33,6 +34,7 @@ import { ScanCommandPanel } from './ScanCommandPanel'
 import { ScanCenter } from './ScanCenter'
 import { RemediationCenter } from './RemediationCenter'
 import { EndpointManagement } from './EndpointManagement'
+import { AiSecurityAnalyst } from './AiSecurityAnalyst'
 import { SecurityEventCenter } from './SecurityEventCenter'
 import './App.css'
 import './pages.css'
@@ -467,6 +469,13 @@ function App() {
           </button>
 
           <button
+            className={`nav-item ${activePage === 'ai' ? 'active' : ''}`}
+            onClick={() => setActivePage('ai')}
+          >
+            <Bot size={19} />
+            AI Analyst
+          </button>
+          <button
             className={`nav-item ${activePage === 'activity' ? 'active' : ''}`}
             onClick={() => setActivePage('activity')}
           >
@@ -864,6 +873,10 @@ function App() {
             deviceId={device?.id}
             online={online}
           />
+        ) : activePage === 'ai' ? (
+          <AiSecurityAnalyst
+            deviceId={device?.id}
+          />
         ) : (
           <AdditionalPages
             activePage={activePage}
@@ -878,6 +891,7 @@ function App() {
 }
 
 export default App
+
 
 
 

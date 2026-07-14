@@ -20,6 +20,17 @@ builder.Services
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddHttpClient(
+    "Ollama",
+    client =>
+    {
+        client.BaseAddress =
+            new Uri("http://127.0.0.1:11434");
+
+        client.Timeout =
+            TimeSpan.FromMinutes(5);
+    });
+
 var connectionString =
     builder.Configuration.GetConnectionString(
         "EndpointSecurityDatabase")
@@ -67,3 +78,4 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
