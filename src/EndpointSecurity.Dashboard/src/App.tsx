@@ -32,6 +32,7 @@ import {
 import { ScanCommandPanel } from './ScanCommandPanel'
 import { ScanCenter } from './ScanCenter'
 import { RemediationCenter } from './RemediationCenter'
+import { EndpointManagement } from './EndpointManagement'
 import './App.css'
 import './pages.css'
 
@@ -827,6 +828,11 @@ function App() {
           </span>
         </footer>
           </>
+        ) : activePage === 'endpoints' ? (
+          <EndpointManagement
+            devices={devices}
+            onRefresh={loadDashboard}
+          />
         ) : activePage === 'scans' ? (
           <ScanCenter
             deviceId={device?.id}
@@ -851,6 +857,7 @@ function App() {
 }
 
 export default App
+
 
 
 
