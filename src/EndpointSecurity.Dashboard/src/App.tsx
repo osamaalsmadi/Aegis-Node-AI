@@ -365,6 +365,11 @@ function App() {
   )
 
   const pageHeadings = {
+  ai: {
+    title: 'Local AI Security Analyst',
+    description:
+      'Private AI-assisted endpoint analysis and recommendations',
+  },
     overview: {
       title: 'Endpoint Overview',
       description:
@@ -891,6 +896,7 @@ function App() {
 }
 
 export default App
+
 
 
 
