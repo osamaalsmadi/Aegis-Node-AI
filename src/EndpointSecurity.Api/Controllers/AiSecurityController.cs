@@ -16,6 +16,10 @@ namespace EndpointSecurity.Api.Controllers;
 public sealed class AiSecurityController : ControllerBase
 {
     private const string ModelName = "qwen2.5:1.5b";
+    private const int MaximumAnalysisSeconds = 15;
+    private static readonly TimeSpan AiEnrichmentTimeout =
+        TimeSpan.FromSeconds(13);
+
     private static readonly Uri OllamaBaseAddress =
         new("http://127.0.0.1:11434");
 
@@ -58,7 +62,7 @@ public sealed class AiSecurityController : ControllerBase
                 provider = "Ollama",
                 model = ModelName,
                 local = true,
-                maximumAnalysisSeconds = 18
+                maximumAnalysisSeconds = MaximumAnalysisSeconds
             });
         }
         catch
@@ -69,7 +73,7 @@ public sealed class AiSecurityController : ControllerBase
                 provider = "Ollama",
                 model = ModelName,
                 local = true,
-                maximumAnalysisSeconds = 18
+                maximumAnalysisSeconds = MaximumAnalysisSeconds
             });
         }
     }
@@ -324,7 +328,7 @@ public sealed class AiSecurityController : ControllerBase
                 CancellationTokenSource.CreateLinkedTokenSource(
                     cancellationToken);
 
-            timeout.CancelAfter(TimeSpan.FromSeconds(15));
+            timeout.CancelAfter(AiEnrichmentTimeout);
 
             var prompt = BuildCompactPrompt(
                 evidence,
@@ -353,9 +357,12 @@ public sealed class AiSecurityController : ControllerBase
                 "application/json");
 
             using var response = await OllamaClient.PostAsync(
-                "/api/generate",
-                content,
-                timeout.Token);
+                    "/api/generate",
+                    content,
+                    timeout.Token)
+                .WaitAsync(
+                    AiEnrichmentTimeout,
+                    cancellationToken);
 
             if (!response.IsSuccessStatusCode)
                 return null;
