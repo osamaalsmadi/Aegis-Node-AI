@@ -38,6 +38,7 @@ import { EndpointManagement } from './EndpointManagement'
 import { AiSecurityAnalyst } from './AiSecurityAnalyst'
 import { SecurityEventCenter } from './SecurityEventCenter'
 import { ThreatTimeline } from './ThreatTimeline'
+import { NetworkMap } from './NetworkMap'
 import './App.css'
 import './pages.css'
 
@@ -885,6 +886,11 @@ function App() {
           />
         ) : activePage === 'remediation' ? (
           <RemediationCenter
+            deviceId={device?.id}
+            online={online}
+          />
+        ) : activePage === 'network' ? (
+          <NetworkMap
             deviceId={device?.id}
             online={online}
           />
