@@ -14,6 +14,7 @@ import {
   Clock3,
   Cpu,
   Database,
+  FileText,
   HardDrive,
   History,
   LayoutDashboard,
@@ -39,6 +40,7 @@ import { AiSecurityAnalyst } from './AiSecurityAnalyst'
 import { SecurityEventCenter } from './SecurityEventCenter'
 import { ThreatTimeline } from './ThreatTimeline'
 import { NetworkMap } from './NetworkMap'
+import { SecurityReport } from './SecurityReport'
 import './App.css'
 import './pages.css'
 
@@ -408,6 +410,11 @@ function App() {
       description:
         'Unified findings, events, scans, remediation, and endpoint activity'
     },
+    reports: {
+      title: 'Security Reports',
+      description:
+        'Generate a professional PDF assessment from live endpoint data'
+    },
     activity: {
       title: 'Security Activity',
       description:
@@ -494,6 +501,14 @@ function App() {
           >
             <History size={19} />
             Threat Timeline
+          </button>
+
+          <button
+            className={`nav-item ${activePage === 'reports' ? 'active' : ''}`}
+            onClick={() => setActivePage('reports')}
+          >
+            <FileText size={19} />
+            Security Reports
           </button>
 
           <button
@@ -899,6 +914,11 @@ function App() {
             deviceId={device?.id}
             online={online}
           />
+        ) : activePage === 'reports' ? (
+          <SecurityReport
+            deviceId={device?.id}
+            online={online}
+          />
         ) : activePage === 'activity' ? (
           <SecurityEventCenter
             deviceId={device?.id}
@@ -922,6 +942,7 @@ function App() {
 }
 
 export default App
+
 
 
 

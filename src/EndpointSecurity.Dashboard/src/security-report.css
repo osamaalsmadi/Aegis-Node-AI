@@ -1,0 +1,680 @@
+.security-report-page {
+  display: grid;
+  gap: 22px;
+}
+
+.report-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 28px;
+}
+
+.report-command-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.report-command-copy h2,
+.report-section-heading h2,
+.report-overview-copy h2,
+.report-empty-state h2 {
+  margin: 5px 0 0;
+}
+
+.report-command-copy p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 8px 0 0;
+  max-width: 670px;
+}
+
+.report-command-icon {
+  align-items: center;
+  background: rgba(48, 212, 255, 0.12);
+  border: 1px solid rgba(48, 212, 255, 0.24);
+  border-radius: 14px;
+  color: var(--cyan);
+  display: flex;
+  flex: 0 0 auto;
+  height: 50px;
+  justify-content: center;
+  width: 50px;
+}
+
+.report-command-actions {
+  align-items: flex-end;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 12px;
+}
+
+.report-command-actions label {
+  color: #75a5c3;
+  display: grid;
+  font-size: 0.67rem;
+  font-weight: 800;
+  gap: 7px;
+  letter-spacing: 0.11em;
+}
+
+.report-command-actions select {
+  background: #071d2d;
+  border: 1px solid #1f4a63;
+  border-radius: 11px;
+  color: #e8f7ff;
+  min-width: 165px;
+  outline: none;
+  padding: 11px 34px 11px 13px;
+}
+
+.report-command-actions select:focus {
+  border-color: var(--cyan);
+}
+
+.report-refresh-button,
+.report-download-button {
+  align-items: center;
+  border-radius: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  min-height: 43px;
+  padding: 0 16px;
+}
+
+.report-refresh-button {
+  background: rgba(48, 212, 255, 0.06);
+  border: 1px solid #22607e;
+  color: #8bdfff;
+}
+
+.report-download-button {
+  background: linear-gradient(135deg, #25caef, #2e9eff);
+  border: 0;
+  box-shadow: 0 10px 24px rgba(35, 177, 238, 0.2);
+  color: #001521;
+}
+
+.report-refresh-button:disabled,
+.report-download-button:disabled,
+.report-command-actions select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.report-error-banner {
+  align-items: center;
+  background: rgba(255, 83, 111, 0.1);
+  border: 1px solid rgba(255, 83, 111, 0.36);
+  border-radius: 13px;
+  color: #ff9aaa;
+  display: flex;
+  gap: 10px;
+  padding: 14px 17px;
+}
+
+.report-loading-state,
+.report-empty-state {
+  align-items: center;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+  min-height: 320px;
+  text-align: center;
+}
+
+.report-loading-state svg,
+.report-empty-state svg {
+  color: var(--cyan);
+}
+
+.report-loading-state strong,
+.report-empty-state h2 {
+  color: #effaff;
+}
+
+.report-overview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+.report-overview-card::after {
+  background: radial-gradient(circle, rgba(46, 174, 255, 0.14), transparent 66%);
+  content: '';
+  height: 300px;
+  pointer-events: none;
+  position: absolute;
+  right: -90px;
+  top: -140px;
+  width: 300px;
+}
+
+.report-overview-main {
+  align-items: center;
+  display: flex;
+  gap: 26px;
+  position: relative;
+  z-index: 1;
+}
+
+.report-risk-ring {
+  align-items: center;
+  background: conic-gradient(
+    #ffb84d var(--report-risk-angle),
+    rgba(80, 133, 164, 0.18) 0
+  );
+  border-radius: 50%;
+  display: flex;
+  flex: 0 0 auto;
+  height: 128px;
+  justify-content: center;
+  position: relative;
+  width: 128px;
+}
+
+.report-risk-ring::before {
+  background: #0d263a;
+  border: 1px solid rgba(108, 169, 203, 0.17);
+  border-radius: 50%;
+  content: '';
+  height: 98px;
+  position: absolute;
+  width: 98px;
+}
+
+.report-risk-ring > div {
+  align-items: baseline;
+  display: flex;
+  position: relative;
+  z-index: 1;
+}
+
+.report-risk-ring strong {
+  color: #fff;
+  font-size: 2.15rem;
+}
+
+.report-risk-ring span {
+  color: #7fa8c0;
+  font-size: 0.82rem;
+}
+
+.report-risk-ring.risk-secure,
+.report-risk-ring.risk-low {
+  background: conic-gradient(
+    #39dfa1 var(--report-risk-angle),
+    rgba(80, 133, 164, 0.18) 0
+  );
+}
+
+.report-risk-ring.risk-high,
+.report-risk-ring.risk-critical {
+  background: conic-gradient(
+    #ff5e79 var(--report-risk-angle),
+    rgba(80, 133, 164, 0.18) 0
+  );
+}
+
+.report-overview-copy {
+  min-width: 0;
+}
+
+.report-overview-copy > p {
+  color: #91bdd6;
+  line-height: 1.72;
+  margin: 10px 0 0;
+  max-width: 980px;
+}
+
+.report-status-row,
+.report-device-line,
+.report-generated-at {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.report-risk-level,
+.report-online-state,
+.report-count-pill,
+.report-issue-status {
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.report-risk-level {
+  background: rgba(255, 184, 77, 0.12);
+  color: #ffbd5a;
+  text-transform: uppercase;
+}
+
+.report-online-state {
+  align-items: center;
+  background: rgba(60, 225, 165, 0.08);
+  color: #7ce9bf;
+  display: inline-flex;
+  gap: 7px;
+}
+
+.report-online-state > span {
+  background: currentColor;
+  border-radius: 50%;
+  height: 7px;
+  width: 7px;
+}
+
+.report-online-state.offline {
+  background: rgba(255, 91, 119, 0.08);
+  color: #ff8da0;
+}
+
+.report-device-line {
+  color: #77a6c2;
+  margin-top: 18px;
+}
+
+.report-device-line strong {
+  color: #dff6ff;
+}
+
+.report-device-line span::before {
+  color: #31536a;
+  content: '/';
+  margin-right: 10px;
+}
+
+.report-generated-at {
+  border-top: 1px solid rgba(102, 165, 198, 0.14);
+  color: #729bb4;
+  font-size: 0.78rem;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+
+.report-metric-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.report-metric {
+  display: flex;
+  flex-direction: column;
+  min-height: 145px;
+  padding: 19px;
+}
+
+.report-metric > svg {
+  color: var(--cyan);
+  margin-bottom: 16px;
+}
+
+.report-metric > span {
+  color: #82adc7;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.report-metric > strong {
+  color: #f8fcff;
+  font-size: 1.75rem;
+  margin-top: 5px;
+}
+
+.report-metric > small {
+  color: #648da6;
+  line-height: 1.4;
+  margin-top: auto;
+  padding-top: 9px;
+}
+
+.report-content-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+.report-protection-panel,
+.report-contents-panel,
+.report-issues-panel,
+.report-recommendations-panel {
+  padding: 24px;
+}
+
+.report-section-heading {
+  align-items: center;
+  border-bottom: 1px solid rgba(102, 165, 198, 0.13);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 17px;
+}
+
+.report-section-heading > svg {
+  color: var(--cyan);
+}
+
+.report-protection-list {
+  display: grid;
+  gap: 9px;
+}
+
+.report-protection-row {
+  align-items: center;
+  background: rgba(4, 24, 38, 0.46);
+  border: 1px solid rgba(88, 148, 180, 0.12);
+  border-radius: 11px;
+  display: grid;
+  gap: 11px;
+  grid-template-columns: auto 1fr auto;
+  min-height: 52px;
+  padding: 9px 12px;
+}
+
+.report-protection-row > strong {
+  font-size: 0.86rem;
+}
+
+.report-control-icon {
+  align-items: center;
+  border-radius: 9px;
+  display: flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.report-control-icon.healthy,
+.report-control-state.healthy {
+  background: rgba(56, 232, 163, 0.1);
+  color: #55eab0;
+}
+
+.report-control-icon.danger,
+.report-control-state.danger {
+  background: rgba(255, 91, 119, 0.1);
+  color: #ff8297;
+}
+
+.report-control-icon.unknown,
+.report-control-state.unknown {
+  background: rgba(255, 184, 77, 0.1);
+  color: #ffc36d;
+}
+
+.report-control-state {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+
+.report-control-value {
+  color: #8ab5ce;
+  font-size: 0.78rem;
+}
+
+.report-contents-list {
+  color: #94bfd7;
+  display: grid;
+  gap: 12px;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.report-contents-list li::marker {
+  color: var(--cyan);
+}
+
+.report-local-note {
+  align-items: center;
+  background: rgba(54, 224, 164, 0.07);
+  border: 1px solid rgba(54, 224, 164, 0.18);
+  border-radius: 12px;
+  color: #59e5b2;
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 13px;
+}
+
+.report-local-note div {
+  display: grid;
+  gap: 3px;
+}
+
+.report-local-note span {
+  color: #79a991;
+  font-size: 0.75rem;
+}
+
+.report-count-pill {
+  background: rgba(48, 212, 255, 0.08);
+  color: #79dfff;
+}
+
+.report-no-issues {
+  align-items: center;
+  background: rgba(56, 232, 163, 0.07);
+  border: 1px solid rgba(56, 232, 163, 0.18);
+  border-radius: 13px;
+  color: #53e4ac;
+  display: flex;
+  gap: 13px;
+  padding: 18px;
+}
+
+.report-no-issues > div {
+  display: grid;
+  gap: 4px;
+}
+
+.report-no-issues span {
+  color: #7cab9a;
+  font-size: 0.78rem;
+}
+
+.report-issue-list {
+  display: grid;
+  gap: 11px;
+}
+
+.report-issue {
+  align-items: flex-start;
+  background: rgba(4, 23, 37, 0.5);
+  border: 1px solid rgba(94, 153, 185, 0.14);
+  border-radius: 12px;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 15px;
+}
+
+.report-severity {
+  border-radius: 7px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 6px 8px;
+  text-transform: uppercase;
+}
+
+.report-severity.severity-critical,
+.report-severity.severity-high {
+  background: rgba(255, 87, 116, 0.12);
+  color: #ff8296;
+}
+
+.report-severity.severity-medium {
+  background: rgba(255, 184, 77, 0.12);
+  color: #ffc46d;
+}
+
+.report-severity.severity-low,
+.report-severity.severity-informational {
+  background: rgba(48, 212, 255, 0.1);
+  color: #75ddff;
+}
+
+.report-issue-copy {
+  min-width: 0;
+}
+
+.report-issue-copy > div {
+  display: grid;
+  gap: 4px;
+}
+
+.report-issue-copy > div > span {
+  color: #5d8ba7;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.report-issue-copy p {
+  color: #83adc6;
+  line-height: 1.5;
+  margin: 9px 0;
+  overflow-wrap: anywhere;
+}
+
+.report-issue-copy small {
+  color: #779db4;
+  line-height: 1.5;
+}
+
+.report-issue-copy b {
+  color: #b8d9e9;
+}
+
+.report-issue-status {
+  background: rgba(117, 157, 181, 0.09);
+  color: #8eb4ca;
+  white-space: nowrap;
+}
+
+.report-recommendation-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.report-recommendation-list li {
+  align-items: flex-start;
+  background: rgba(4, 23, 37, 0.5);
+  border: 1px solid rgba(94, 153, 185, 0.12);
+  border-radius: 11px;
+  display: flex;
+  gap: 12px;
+  padding: 13px;
+}
+
+.report-recommendation-list li > span {
+  align-items: center;
+  background: rgba(48, 212, 255, 0.12);
+  border-radius: 50%;
+  color: var(--cyan);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  font-weight: 900;
+  height: 27px;
+  justify-content: center;
+  width: 27px;
+}
+
+.report-recommendation-list p {
+  color: #91b8cd;
+  line-height: 1.58;
+  margin: 2px 0 0;
+}
+
+.report-data-footer {
+  color: #5e849c;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.72rem;
+  gap: 20px;
+  justify-content: flex-end;
+  padding: 0 4px 8px;
+}
+
+@media (max-width: 1400px) {
+  .report-metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .report-command-bar,
+  .report-command-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .report-command-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .report-command-actions label {
+    grid-column: 1 / -1;
+  }
+
+  .report-command-actions select {
+    width: 100%;
+  }
+
+  .report-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .report-command-bar,
+  .report-overview-card,
+  .report-protection-panel,
+  .report-contents-panel,
+  .report-issues-panel,
+  .report-recommendations-panel {
+    padding: 18px;
+  }
+
+  .report-command-copy,
+  .report-overview-main {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .report-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-issue {
+    grid-template-columns: 1fr;
+  }
+
+  .report-issue-status {
+    justify-self: start;
+  }
+}

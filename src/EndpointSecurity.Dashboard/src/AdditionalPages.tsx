@@ -22,6 +22,7 @@ export type DashboardPage =
   | 'scans'
   | 'remediation'
   | 'ai'
+  | 'reports'
 
 type DeviceRecord = {
   id: string
@@ -448,6 +449,7 @@ export function AdditionalPages({
     </div>
   )
 }
+
 
 
 
