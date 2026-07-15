@@ -1,55 +1,20 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Continue'
+Write-Host "Removing Endpoint Security Platform..."
 
-$taskName = 'Endpoint Security Platform'
-$serviceName = 'EndpointSecurityAgent'
-$installRoot = Join-Path $env:ProgramFiles 'EndpointSecurityPlatform'
-$desktop = [Environment]::GetFolderPath('Desktop')
-
-$principal = New-Object Security.Principal.WindowsPrincipal(
-    [Security.Principal.WindowsIdentity]::GetCurrent()
-)
-
-if (-not $principal.IsInRole(
-    [Security.Principal.WindowsBuiltInRole]::Administrator
-)) {
-    $process = Start-Process powershell.exe `
-        -Verb RunAs `
-        -Wait `
-        -PassThru `
-        -ArgumentList @(
-            '-NoProfile',
-            '-ExecutionPolicy',
-            'Bypass',
-            '-File',
-            "`"$PSCommandPath`""
-        )
-
-    exit $process.ExitCode
+if (Get-Service -Name "EndpointSecurityAgent" -ErrorAction SilentlyContinue) {
+    Stop-Service "EndpointSecurityAgent" -Force
+    Remove-Service "EndpointSecurityAgent"
 }
 
-Write-Host 'Uninstalling Endpoint Security Platform...' -ForegroundColor Cyan
-
-Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
-
-Stop-Service -Name $serviceName -Force -ErrorAction SilentlyContinue
-& sc.exe delete $serviceName | Out-Null
-
-$processIds = @(
-    Get-NetTCPConnection -LocalPort 5235 -State Listen -ErrorAction SilentlyContinue |
-    Select-Object -ExpandProperty OwningProcess -Unique
-)
-
-foreach ($ownerId in $processIds) {
-    Stop-Process -Id $ownerId -Force -ErrorAction SilentlyContinue
+$taskName = "Endpoint Security Platform"
+if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+    Stop-ScheduledTask -TaskName $taskName
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false
 }
 
-Remove-Item -LiteralPath (Join-Path $desktop 'Endpoint Security Platform.url') -Force -ErrorAction SilentlyContinue
-Remove-Item -LiteralPath (Join-Path $desktop 'Uninstall Endpoint Security Platform.lnk') -Force -ErrorAction SilentlyContinue
+Get-Process -Name "EndpointSecurity.Api" -ErrorAction SilentlyContinue | Stop-Process -Force
 
-$deleteCommand = "timeout /t 3 /nobreak >nul & rmdir /s /q `"$installRoot`""
-Start-Process cmd.exe -ArgumentList '/c', $deleteCommand -WindowStyle Hidden
+$shortcut = "$env:PUBLIC\Desktop\Endpoint Security Platform.lnk"
+if (Test-Path $shortcut) { Remove-Item $shortcut -Force }
 
-Write-Host ''
-Write-Host 'Endpoint Security Platform was uninstalled.' -ForegroundColor Green
-Write-Host 'SQL data and Ollama models were preserved.'
+Write-Host "Uninstallation completed. SQL Server, Ollama, and User Data are preserved."

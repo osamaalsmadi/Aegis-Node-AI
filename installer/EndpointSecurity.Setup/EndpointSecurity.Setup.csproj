@@ -1,24 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyName>EndpointSecurityPlatform-Setup</AssemblyName>
-    <RootNamespace>EndpointSecurity.Setup</RootNamespace>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>true</SelfContained>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishSingleFile>true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
-    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
-    <DebugType>None</DebugType>
-    <DebugSymbols>false</DebugSymbols>
-    <ApplicationIcon>EndpointSecurityPlatform.ico</ApplicationIcon>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
-
   <ItemGroup>
-    <EmbeddedResource
-      Include="Payload.zip"
-      LogicalName="EndpointSecurityPlatform.Payload.zip" />
+    <EmbeddedResource Include="payload.zip" />
   </ItemGroup>
 </Project>
