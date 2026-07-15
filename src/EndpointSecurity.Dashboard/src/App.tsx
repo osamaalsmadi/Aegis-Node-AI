@@ -1,4 +1,4 @@
-﻿import {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -15,6 +15,7 @@ import {
   Cpu,
   Database,
   HardDrive,
+  History,
   LayoutDashboard,
   Network,
   RefreshCw,
@@ -36,6 +37,7 @@ import { RemediationCenter } from './RemediationCenter'
 import { EndpointManagement } from './EndpointManagement'
 import { AiSecurityAnalyst } from './AiSecurityAnalyst'
 import { SecurityEventCenter } from './SecurityEventCenter'
+import { ThreatTimeline } from './ThreatTimeline'
 import './App.css'
 import './pages.css'
 
@@ -400,6 +402,11 @@ function App() {
       description:
         'Live process-to-network connection telemetry'
     },
+    timeline: {
+      title: 'Threat Timeline',
+      description:
+        'Unified findings, events, scans, remediation, and endpoint activity'
+    },
     activity: {
       title: 'Security Activity',
       description:
@@ -480,6 +487,14 @@ function App() {
             <Bot size={19} />
             AI Analyst
           </button>
+          <button
+            className={`nav-item ${activePage === 'timeline' ? 'active' : ''}`}
+            onClick={() => setActivePage('timeline')}
+          >
+            <History size={19} />
+            Threat Timeline
+          </button>
+
           <button
             className={`nav-item ${activePage === 'activity' ? 'active' : ''}`}
             onClick={() => setActivePage('activity')}
@@ -870,6 +885,11 @@ function App() {
           />
         ) : activePage === 'remediation' ? (
           <RemediationCenter
+            deviceId={device?.id}
+            online={online}
+          />
+        ) : activePage === 'timeline' ? (
+          <ThreatTimeline
             deviceId={device?.id}
             online={online}
           />

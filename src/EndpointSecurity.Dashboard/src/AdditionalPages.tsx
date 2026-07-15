@@ -1,4 +1,4 @@
-﻿import {
+import {
   Activity,
   AlertTriangle,
   CheckCircle2,
@@ -17,6 +17,7 @@ export type DashboardPage =
   | 'endpoints'
   | 'findings'
   | 'network'
+  | 'timeline'
   | 'activity'
   | 'scans'
   | 'remediation'
