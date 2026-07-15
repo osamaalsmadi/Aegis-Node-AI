@@ -23,13 +23,13 @@ if (-not (Test-Path $ollamaPath)) {
             Start-Process -FilePath $ollamaSetup -ArgumentList "/silent" -Wait -NoNewWindow
         }
     } catch {
-        Write-Host "AI installation skipped/failed. Platform will continue offline." -ForegroundColor Yellow
+        Write-Host "AI installation skipped/failed." -ForegroundColor Yellow
     }
 }
 
 if (Test-Path $ollamaPath) {
-    Write-Host "Pulling qwen2.5:1.5b model..."
-    try { & $ollamaPath pull qwen2.5:1.5b } catch { Write-Host "Model pull skipped/failed." -ForegroundColor Yellow }
+    Write-Host "Pulling AI model..."
+    try { & $ollamaPath pull qwen2.5:1.5b } catch { }
 }
 
 Write-Host "Configuring EndpointSecurityAgent Service..."
@@ -52,13 +52,13 @@ $trigger = New-ScheduledTaskTrigger -AtStartup
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -RunLevel Highest -User $env:USERNAME -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
 
-Write-Host "Triggering Database Creation & Migrations via API..."
+Write-Host "Triggering Database Creation..."
 try { Start-Sleep -Seconds 5; Invoke-RestMethod -Uri "http://localhost:5235/api/health" -UseBasicParsing | Out-Null } catch { }
 
-Write-Host "Creating Desktop Shortcut..."
+Write-Host "Creating Desktop App Shortcut..."
 $wshShell = New-Object -ComObject WScript.Shell
 $shortcut = $wshShell.CreateShortcut("$env:PUBLIC\Desktop\Endpoint Security Platform.lnk")
-$shortcut.TargetPath = "http://localhost:5235"
+$shortcut.TargetPath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+$shortcut.Arguments = "--app="http://localhost:5235""
+$shortcut.IconLocation = "$apiExe,0"
 $shortcut.Save()
-
-Write-Host "Core installation scripts executed successfully."

@@ -117,7 +117,7 @@ namespace EndpointSecurity.Setup
                 btnBack.Enabled = false;
                 btnNext.Enabled = false;
                 btnCancel.Enabled = false;
-                installPath = txtPath.Text;
+                installPath = string.IsNullOrWhiteSpace(txtPath.Text) ? @"C:\Program Files\EndpointSecurityPlatform" : txtPath.Text; if (!Path.IsPathRooted(installPath)) installPath = @"C:\Program Files\EndpointSecurityPlatform";
                 await InstallAsync();
             }
             else if (step == 4)
@@ -194,3 +194,4 @@ namespace EndpointSecurity.Setup
         }
     }
 }
+
