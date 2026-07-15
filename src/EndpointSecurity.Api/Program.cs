@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using EndpointSecurity.Application.Devices;
 using EndpointSecurity.Application.Findings;
 using EndpointSecurity.Application.SecurityEvents;
@@ -73,6 +73,14 @@ builder.Services.AddScoped<
     WindowsSecurityEventService>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var database = scope.ServiceProvider
+        .GetRequiredService<EndpointSecurityDbContext>();
+
+    database.Database.Migrate();
+}
 
 if (app.Environment.IsDevelopment())
 {
