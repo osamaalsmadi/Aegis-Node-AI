@@ -20,24 +20,20 @@ public sealed class AiSecurityController : ControllerBase
     private static readonly TimeSpan AiEnrichmentTimeout =
         TimeSpan.FromSeconds(13);
 
-    private static readonly Uri OllamaBaseAddress =
-        new("http://127.0.0.1:11434");
-
-    private static readonly HttpClient OllamaClient = new()
-    {
-        BaseAddress = OllamaBaseAddress,
-        Timeout = Timeout.InfiniteTimeSpan
-    };
 
     private static readonly ConcurrentDictionary<string, AiCacheEntry>
         AiCache = new();
 
     private readonly ILogger<AiSecurityController> _logger;
+    private readonly HttpClient _ollamaClient;
 
     public AiSecurityController(
-        ILogger<AiSecurityController> logger)
+        ILogger<AiSecurityController> logger,
+        IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
+        _ollamaClient =
+            httpClientFactory.CreateClient("Ollama");
     }
 
     [HttpGet("status")]
@@ -52,7 +48,7 @@ public sealed class AiSecurityController : ControllerBase
 
             timeout.CancelAfter(TimeSpan.FromSeconds(3));
 
-            using var response = await OllamaClient.GetAsync(
+            using var response = await _ollamaClient.GetAsync(
                 "/api/tags",
                 timeout.Token);
 
@@ -356,7 +352,7 @@ public sealed class AiSecurityController : ControllerBase
                 Encoding.UTF8,
                 "application/json");
 
-            using var response = await OllamaClient.PostAsync(
+            using var response = await _ollamaClient.PostAsync(
                     "/api/generate",
                     content,
                     timeout.Token)

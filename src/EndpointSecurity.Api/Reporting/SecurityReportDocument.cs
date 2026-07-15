@@ -57,11 +57,21 @@ public sealed class SecurityReportDocument(
                     column.Item().Element(ComposeMetrics);
                     column.Item().Element(ComposeExecutiveSummary);
                     column.Item().Element(ComposeEndpointIdentity);
+
+                    column.Item().PageBreak();
                     column.Item().Element(ComposeProtection);
                     column.Item().Element(ComposeFindings);
+
+                    column.Item().PageBreak();
                     column.Item().Element(ComposeSecurityEvents);
+
+                    column.Item().PageBreak();
                     column.Item().Element(ComposeNetworkActivity);
+
+                    column.Item().PageBreak();
                     column.Item().Element(ComposeActionHistory);
+
+                    column.Item().PageBreak();
                     column.Item().Element(ComposeRecommendations);
                     column.Item().Element(ComposeMethodology);
                 });
@@ -396,7 +406,7 @@ public sealed class SecurityReportDocument(
                     return;
                 }
 
-                foreach (var finding in model.Findings.Take(12))
+                foreach (var finding in model.Findings.Take(3))
                 {
                     section.Item()
                         .PaddingTop(7)
@@ -431,14 +441,14 @@ public sealed class SecurityReportDocument(
                                 .FontSize(10);
 
                             column.Item()
-                                .Text(finding.Description)
+                                .Text(Compact(finding.Description, 180))
                                 .FontColor(Muted)
                                 .LineHeight(1.3f);
 
                             column.Item().Text(text =>
                             {
                                 text.Span("Evidence: ").SemiBold();
-                                text.Span(finding.Evidence);
+                                text.Span(Compact(finding.Evidence, 160));
                             });
 
                             if (!string.IsNullOrWhiteSpace(
@@ -447,7 +457,7 @@ public sealed class SecurityReportDocument(
                                 column.Item().Text(text =>
                                 {
                                     text.Span("Analyst note: ").SemiBold();
-                                    text.Span(finding.AnalystNote);
+                                    text.Span(Compact(finding.AnalystNote, 160));
                                 });
                             }
                         });
@@ -499,7 +509,7 @@ public sealed class SecurityReportDocument(
                         header.Cell().Element(TableHeader).Text("EVIDENCE");
                     });
 
-                    foreach (var securityEvent in model.Events.Take(15))
+                    foreach (var securityEvent in model.Events.Take(8))
                     {
                         table.Cell().Element(TableCell).Text(
                             securityEvent.OccurredAtUtc.ToString(
@@ -518,7 +528,7 @@ public sealed class SecurityReportDocument(
                             securityEvent.Category);
 
                         table.Cell().Element(TableCell).Text(
-                            securityEvent.Evidence);
+                            Compact(securityEvent.Evidence, 140));
                     }
                 });
             });
@@ -568,7 +578,7 @@ public sealed class SecurityReportDocument(
                         header.Cell().Element(TableHeader).Text("COUNT");
                     });
 
-                    foreach (var connection in model.Connections.Take(15))
+                    foreach (var connection in model.Connections.Take(12))
                     {
                         table.Cell().Element(TableCell).Text(
                             $"{connection.ProcessName}\nPID {connection.ProcessId}");
@@ -635,7 +645,7 @@ public sealed class SecurityReportDocument(
                         header.Cell().Element(TableHeader).Text("RESULT");
                     });
 
-                    foreach (var action in model.Actions.Take(12))
+                    foreach (var action in model.Actions.Take(8))
                     {
                         table.Cell().Element(TableCell).Text(
                             action.RequestedAtUtc.ToString(
@@ -645,7 +655,7 @@ public sealed class SecurityReportDocument(
                         table.Cell().Element(TableCell).Text(action.Status)
                             .SemiBold()
                             .FontColor(StatusColor(action.Status));
-                        table.Cell().Element(TableCell).Text(action.Result);
+                        table.Cell().Element(TableCell).Text(Compact(action.Result, 140));
                     }
                 });
             });
@@ -659,11 +669,15 @@ public sealed class SecurityReportDocument(
             "Prioritized Recommendations",
             section =>
             {
+                var recommendations = model.Recommendations
+                    .Take(6)
+                    .ToList();
+
                 for (var index = 0;
-                     index < model.Recommendations.Count;
+                     index < recommendations.Count;
                      index++)
                 {
-                    var recommendation = model.Recommendations[index];
+                    var recommendation = recommendations[index];
 
                     section.Item()
                         .PaddingBottom(5)
@@ -681,7 +695,7 @@ public sealed class SecurityReportDocument(
                             row.RelativeItem()
                                 .PaddingLeft(9)
                                 .PaddingTop(3)
-                                .Text(recommendation)
+                                .Text(Compact(recommendation, 220))
                                 .LineHeight(1.35f);
                         });
                 }
@@ -733,6 +747,35 @@ public sealed class SecurityReportDocument(
                     .LineHeight(1.4f)
                     .FontColor(Muted);
             });
+    }
+
+    private static string Compact(
+        string? value,
+        int maximumLength)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Unavailable";
+
+        var normalized = value
+            .Replace('\r', ' ')
+            .Replace('\n', ' ')
+            .Trim();
+
+        while (normalized.Contains(
+                   "  ",
+                   StringComparison.Ordinal))
+        {
+            normalized = normalized.Replace(
+                "  ",
+                " ",
+                StringComparison.Ordinal);
+        }
+
+        if (normalized.Length <= maximumLength)
+            return normalized;
+
+        return normalized[..Math.Max(1, maximumLength - 1)] +
+               "\u2026";
     }
 
     private static void ComposeSectionTitle(
