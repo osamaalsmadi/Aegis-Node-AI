@@ -462,7 +462,7 @@ export function NetworkMap({
         (first, second) =>
           second[1].length - first[1].length
       )
-      .slice(0, 14)
+      .slice(0, 16)
 
     const endpointNode: MapNode = {
       id: 'endpoint',

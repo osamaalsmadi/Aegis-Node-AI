@@ -311,6 +311,7 @@
   position: relative;
   min-width: 0;
   overflow: auto hidden;
+  direction: ltr;
   border: 1px solid rgba(122, 158, 191, 0.12);
   border-radius: 12px;
   background:
@@ -337,6 +338,7 @@
   min-width: 840px;
   width: 100%;
   min-height: 610px;
+  direction: ltr;
 }
 
 .network-map-column-label {
@@ -421,6 +423,13 @@
   stroke: rgba(45, 211, 255, 0.24);
   stroke-width: 1;
   transition: fill 150ms ease, stroke 150ms ease, stroke-width 150ms ease;
+}
+
+.network-map-node.process rect,
+.network-map-node.remote rect {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(0.85);
 }
 
 .network-map-node.remote.public rect {
