@@ -1,4 +1,4 @@
-﻿import {
+import {
   Bot,
   BrainCircuit,
   CheckCircle2,
@@ -141,12 +141,20 @@ function riskClass(
 
   if (
     value === 'critical' ||
-    value === 'high'
+    value === 'high' ||
+    value === '\u062d\u0631\u062c' ||
+    value === '\u062d\u0631\u062c\u0629' ||
+    value === '\u0645\u0631\u062a\u0641\u0639' ||
+    value === '\u0639\u0627\u0644\u064a\u0629'
   ) {
     return 'danger'
   }
 
-  if (value === 'medium') {
+  if (
+    value === 'medium' ||
+    value === '\u0645\u062a\u0648\u0633\u0637' ||
+    value === '\u0645\u062a\u0648\u0633\u0637\u0629'
+  ) {
     return 'warning'
   }
 
@@ -422,10 +430,7 @@ export function AiSecurityAnalyst({
               onClick={() =>
                 void runAnalysis()
               }
-              disabled={
-                loading ||
-                !status?.available
-              }
+              disabled={loading}
             >
               {loading ? (
                 <LoaderCircle

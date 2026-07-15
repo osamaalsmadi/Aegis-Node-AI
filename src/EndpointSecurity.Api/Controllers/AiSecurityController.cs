@@ -125,13 +125,19 @@ public sealed class AiSecurityController : ControllerBase
             model = ModelName,
             provider = "Verified security engine + local Ollama",
             local = true,
+            language = arabic ? "Arabic" : "English",
             aiEnhanced = enrichment is not null,
             responseTimeMs = stopwatch.ElapsedMilliseconds,
-            analyzedAtUtc = DateTime.UtcNow,
+            generatedAtUtc = DateTime.UtcNow,
             evidence = new
             {
                 riskScore = evidence.RiskScore,
                 activeAlertCount = evidence.Findings.Count,
+                protectionIssueCount =
+                    CountControlIssues(evidence),
+                totalIssueCount =
+                    evidence.Findings.Count +
+                    CountControlIssues(evidence),
                 securityEventsLast24Hours =
                     evidence.EventsLast24Hours,
                 highOrCriticalEvents =
@@ -169,11 +175,111 @@ public sealed class AiSecurityController : ControllerBase
                 }),
             analysis = new
             {
-                overallRisk = grounded.OverallRisk,
+                overallRisk = GetRiskLabel(
+                    evidence.RiskScore,
+                    arabic),
                 headline = grounded.Headline,
-                summary = grounded.Summary,
-                observations,
-                priorityActions = actions
+                executiveSummary = grounded.Summary,
+                observations = observations.Select(
+                    (text, index) =>
+                    {
+                        var findingIndex = index - 5;
+
+                        var severityCode =
+                            findingIndex >= 0 &&
+                            findingIndex <
+                            evidence.Findings.Count
+                                ? evidence.Findings[
+                                    findingIndex].Severity
+                                : "Info";
+
+                        var severity = arabic
+                            ? severityCode.ToLowerInvariant()
+                                switch
+                                {
+                                    "critical" =>
+                                        "\u062d\u0631\u062c\u0629",
+                                    "high" =>
+                                        "\u0639\u0627\u0644\u064a\u0629",
+                                    "medium" =>
+                                        "\u0645\u062a\u0648\u0633\u0637\u0629",
+                                    "low" =>
+                                        "\u0645\u0646\u062e\u0641\u0636\u0629",
+                                    _ =>
+                                        "\u0645\u0639\u0644\u0648\u0645\u0627\u062a\u064a\u0629"
+                                }
+                            : severityCode;
+
+                        var title = arabic
+                            ? index switch
+                            {
+                                0 =>
+                                    "\u0627\u0644\u062d\u0627\u0644\u0629 \u0627\u0644\u0639\u0627\u0645\u0629 \u0644\u0644\u0645\u062e\u0627\u0637\u0631",
+                                1 =>
+                                    "\u0627\u0644\u062a\u0646\u0628\u064a\u0647\u0627\u062a \u0648\u0627\u0644\u0623\u062d\u062f\u0627\u062b \u0627\u0644\u0623\u0645\u0646\u064a\u0629",
+                                2 =>
+                                    "Microsoft Defender \u0648\u0627\u0644\u062d\u0645\u0627\u064a\u0629 \u0627\u0644\u0641\u0648\u0631\u064a\u0629",
+                                3 =>
+                                    "Domain / Private / Public Firewall",
+                                4 =>
+                                    "\u0627\u0644\u0639\u0645\u0644\u064a\u0627\u062a \u0648\u0627\u062a\u0635\u0627\u0644\u0627\u062a TCP",
+                                _ =>
+                                    findingIndex >= 0 &&
+                                    findingIndex <
+                                    evidence.Findings.Count
+                                        ? $"\u0627\u0644\u0645\u0634\u0643\u0644\u0629 {findingIndex + 1}: " +
+                                          LocalizeCategory(
+                                              evidence.Findings[
+                                                  findingIndex]
+                                                  .Category,
+                                              true)
+                                        : "\u0645\u0644\u0627\u062d\u0638\u0629 \u0625\u0636\u0627\u0641\u064a\u0629"
+                            }
+                            : index switch
+                            {
+                                0 => "Overall risk",
+                                1 => "Alerts and security events",
+                                2 => "Defender and real-time protection",
+                                3 => "Domain / Private / Public Firewall",
+                                4 => "Processes and TCP connections",
+                                _ =>
+                                    findingIndex >= 0 &&
+                                    findingIndex <
+                                    evidence.Findings.Count
+                                        ? $"Issue {findingIndex + 1}"
+                                        : "Additional observation"
+                            };
+
+                        return new
+                        {
+                            severity,
+                            title,
+                            evidence = text,
+                            description = text,
+                            details = text
+                        };
+                    })
+                    .ToArray(),
+                priorityActions = actions.Select(
+                    (text, index) =>
+                    {
+                        var reason = arabic
+                            ? "\u0647\u0630\u0627 \u0627\u0644\u0625\u062c\u0631\u0627\u0621 \u0645\u0631\u062a\u0628\u0637 \u0645\u0628\u0627\u0634\u0631\u0629 \u0628\u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u062c\u0647\u0627\u0632 \u0627\u0644\u062d\u0627\u0644\u064a\u0629 \u0648\u0627\u0644\u0645\u0634\u0643\u0644\u0629 \u0627\u0644\u0645\u0643\u062a\u0634\u0641\u0629."
+                            : "This action is directly related to the current endpoint evidence and detected issue.";
+
+                        return new
+                        {
+                            priority = index + 1,
+                            title = arabic
+                                ? $"\u0627\u0644\u0625\u062c\u0631\u0627\u0621 {index + 1}"
+                                : $"Action {index + 1}",
+                            action = text,
+                            reason,
+                            description = text,
+                            details = reason
+                        };
+                    })
+                    .ToArray()
             }
         });
     }
@@ -1394,7 +1500,16 @@ public sealed class AiSecurityController : ControllerBase
             var telemetry = GetChild(context, "telemetry");
             var eventSummary = GetChild(
                 context,
-                "eventSummary");
+                "securityEventSummary");
+
+            if (eventSummary.ValueKind is
+                JsonValueKind.Undefined or
+                JsonValueKind.Null)
+            {
+                eventSummary = GetChild(
+                    context,
+                    "eventSummary");
+            }
 
             var findings = ReadFindings(context);
 
