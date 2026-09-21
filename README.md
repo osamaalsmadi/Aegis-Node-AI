@@ -69,4 +69,3 @@ EndpointSecurityPlatform/
 <img width="1600" height="900" alt="WhatsApp Image 2026-09-21 at 7 38 00 PM (1)" src="https://github.com/user-attachments/assets/c1131f7f-fe10-4ffa-9937-f52d59a8dbe3" />
 <img width="1600" height="900" alt="WhatsApp Image 2026-09-21 at 7 38 00 PM (8)" src="https://github.com/user-attachments/assets/aee4b38c-7de7-4f4b-8095-e4d0e0bb6dd2" />
 
-*(قم بسحب وإفلات صور الواجهات أو الـ Dashboard هنا لتظهر بشكل مباشر في المشروع)*
