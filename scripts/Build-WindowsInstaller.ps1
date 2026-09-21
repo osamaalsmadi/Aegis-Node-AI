@@ -11,8 +11,28 @@ New-Item -ItemType Directory -Path $publishDir -Force | Out-Null
 if (-not (Test-Path $releaseDir)) { New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null }
 
 Write-Host "Building API and Agent (Self-contained)..."
-dotnet publish "$projectPath\src\EndpointSecurity.Api\EndpointSecurity.Api.csproj" -c Release -r win-x64 --self-contained true -o "$publishDir\Api"
-dotnet publish "$projectPath\src\EndpointSecurity.Agent\EndpointSecurity.Agent.csproj" -c Release -r win-x64 --self-contained true -o "$publishDir\Agent"
+dotnet publish "$projectPath\src\EndpointSecurity.Api\EndpointSecurity.Api.csproj" -c Release -r win-x64 --self-contained true -o "$publishDir\Api" | Out-Null
+dotnet publish "$projectPath\src\EndpointSecurity.Agent\EndpointSecurity.Agent.csproj" -c Release -r win-x64 --self-contained true -o "$publishDir\Agent" | Out-Null
+
+Write-Host "Forcing Configuration Files into Payload..."
+$jsonConfig = @'
+{
+  "ConnectionStrings": {
+    "EndpointSecurityDatabase": "Server=localhost\\SQLEXPRESS;Database=EndpointSecurity;Trusted_Connection=True;TrustServerCertificate=True;"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}
+'@
+Set-Content -Path "$publishDir\Api\appsettings.json" -Value $jsonConfig -Encoding UTF8
+Set-Content -Path "$publishDir\Api\appsettings.Production.json" -Value $jsonConfig -Encoding UTF8
+Set-Content -Path "$publishDir\Agent\appsettings.json" -Value $jsonConfig -Encoding UTF8
+Set-Content -Path "$publishDir\Agent\appsettings.Production.json" -Value $jsonConfig -Encoding UTF8
 
 Write-Host "Staging Installer Dependencies (SQL only)..."
 $depsDir = Join-Path $publishDir "Dependencies"
@@ -28,6 +48,6 @@ if (Test-Path $payloadZip) { Remove-Item $payloadZip -Force }
 Compress-Archive -Path "$publishDir\*" -DestinationPath $payloadZip -Force
 
 Write-Host "Building Final Graphical Setup.exe..."
-dotnet publish "$setupDir\EndpointSecurity.Setup.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $releaseDir
+dotnet publish "$setupDir\EndpointSecurity.Setup.csproj" -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $releaseDir | Out-Null
 
-Write-Host "Build stage complete. Final Setup is in $releaseDir"
+Write-Host "Build stage complete."
