@@ -36,3 +36,11 @@ button {
 #root {
   min-height: 100vh;
 }
+
+/* Keyboard navigation and reduced-motion preferences. */
+:focus-visible { outline: 3px solid #62d9ff; outline-offset: 3px; }
+button:disabled { cursor: not-allowed; opacity: .6; }
+img, svg { max-width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
