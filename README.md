@@ -1,58 +1,63 @@
-# Aegis-Node-AI 🛡️🤖
+# Aegis-Node-AI
 
-[Browse project files](#explore-the-project)
+A Windows endpoint security portfolio project combining a .NET agent, an ASP.NET Core API, and a React dashboard.
 
+**C# · .NET 10 · React · TypeScript · SQL Server · Entity Framework Core · Ollama integration**
 
-> An advanced, AI-driven Endpoint Security and Threat Intelligence Platform designed to monitor system activities, detect behavioral anomalies, and secure network infrastructure in real-time.
+## Project areas
 
----
+| Component | Purpose |
+| --- | --- |
+| [Agent](src/EndpointSecurity.Agent) | Windows endpoint telemetry and background workers |
+| [API](src/EndpointSecurity.Api) | Devices, findings, security events, and reporting endpoints |
+| [Dashboard](src/EndpointSecurity.Dashboard) | Endpoint and security-management interface |
+| [Application](src/EndpointSecurity.Application) | Service contracts |
+| [Domain](src/EndpointSecurity.Domain) | Entities and enums |
+| [Infrastructure](src/EndpointSecurity.Infrastructure) | SQL Server persistence and services |
+| [Scripts](scripts) | Local installation and service-management utilities |
 
-## 🚀 Overview
+## Prerequisites
 
-**Aegis-Node-AI** is a comprehensive enterprise-grade endpoint security solution. It combines robust backend architecture with intelligent threat monitoring capabilities to protect system endpoints, analyze running processes, and mitigate potential security breaches before they escalate.
+- .NET 10 SDK for the API and agent projects.
+- Node.js/npm compatible with the frontend package and lockfile.
+- A reachable SQL Server database with a valid connection string.
+- Windows for Windows-specific agent functionality.
+- A local Ollama service for features that depend on that integration.
 
----
+## Development setup
 
-## 🛠️ Tech Stack & Architecture
+Review configuration before starting. Provide the database connection through `ConnectionStrings__EndpointSecurityDatabase`; keep credentials outside committed files. The API applies database migrations at startup, so use a dedicated development database.
 
-The platform is built using modern, industry-standard technologies to ensure high performance, scalability, and security:
+From the repository root:
 
-* **Backend & API:** C#, .NET, ASP.NET Core
-* **Agent & Core Logic:** .NET Core, Background Workers, Real-time telemetry collectors
-* **Database & Persistence:** SQLite / SQL Server with structured Entity Framework Core ORM
-* **Frontend Dashboard:** React, Modern JavaScript, HTML5, CSS3 for real-time monitoring and alert visualization
-* **Integration:** AI-powered anomaly detection and logging modules
-
----
-
-## ✨ Key Features
-
-* **Real-Time Endpoint Monitoring:** Tracks process creation, network connections, and system telemetry across endpoints.
-* **AI-Driven Threat Detection:** Automatically flags suspicious behaviors and anomalies using intelligent heuristics.
-* **Centralized Management Dashboard:** A sleek, responsive React-based UI providing live security overviews, alerts, and detailed logs.
-* **Secure Data Persistence:** Robust database layer ensuring all security events, agent states, and logs are safely stored and queryable.
-* **Modular Architecture:** Clean separation of concerns featuring dedicated modules for Agent, API, Domain logic, and UI Dashboard.
-
----
-
-## 📂 Project Structure
-
-```text
-EndpointSecurityPlatform/
-│
-├── src/
-│   ├── EndpointSecurity.Agent/       # Endpoint telemetry collector & monitor
-│   ├── EndpointSecurity.Api/         # Backend RESTful API & security endpoints
-│   ├── EndpointSecurity.Domain/      # Core business entities, models, and logic
-│   └── EndpointSecurity.Dashboard/   # React-based real-time control center UI
-│
-└── scripts/                          # Deployment and automation utilities
-
+```sh
+dotnet run --project src/EndpointSecurity.Api
 ```
 
----
+The API defaults to http://127.0.0.1:5235. In a second terminal:
 
-## 📸 Screenshots & Dashboard
+```sh
+cd src/EndpointSecurity.Dashboard
+npm ci
+npm run dev
+```
+
+Open http://127.0.0.1:5173. The Vite configuration proxies `/api` to port 5235.
+
+Ollama defaults to http://127.0.0.1:11434. The API requires the configured Ollama address to be loopback. Review installation scripts before running them: they may install or update Windows services.
+
+## Build
+
+```sh
+dotnet build EndpointSecurityPlatform.slnx
+cd src/EndpointSecurity.Dashboard
+npm run build
+```
+
+A full Windows agent/API/database integration run has not been verified in this documentation review.
+
+## Screenshots
+
 <img width="100%" alt="Aegis-Node-AI dashboard screenshot" src="https://github.com/user-attachments/assets/638c16cc-8ee4-4938-b6b0-b1718f93dc6f" />
 
 <details>
@@ -79,10 +84,6 @@ EndpointSecurityPlatform/
 
 </details>
 
+## Scope
 
-
-## Explore the project
-
-- [EndpointSecurityPlatform.slnx](EndpointSecurityPlatform.slnx)
-- [src/EndpointSecurity.Dashboard/index.html](src/EndpointSecurity.Dashboard/index.html)
-- [src/EndpointSecurity.Dashboard/package.json](src/EndpointSecurity.Dashboard/package.json)
+This repository demonstrates endpoint security engineering concepts. Detection efficacy, production hardening, and operational reliability require dedicated testing; the presence of AI-related modules is not a guarantee of threat prevention.
